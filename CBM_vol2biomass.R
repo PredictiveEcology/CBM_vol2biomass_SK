@@ -209,7 +209,7 @@ Init <- function(sim) {
   # plot
   # Test for steps of 1 in the yield curves
   ##TODO have to make this more generic. Right now names of columns are fixed.
-
+browser()
   ageJumps <- sim$userGcM3[, list(jumps = unique(diff(as.numeric(Age)))), by = "gcids"]
   idsWithJumpGT1 <- ageJumps[jumps > 1]$gcids
   if (length(idsWithJumpGT1)) {
