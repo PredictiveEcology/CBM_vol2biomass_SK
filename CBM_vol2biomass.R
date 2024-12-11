@@ -262,21 +262,42 @@ browser()
   # }
   ####thisAdmin <- sim$cbmAdmin[sim$cbmAdmin$SpatialUnitID %in% spu & sim$cbmAdmin$EcoBoundaryID %in% eco, ]
 
-  # "s" table for small table3, 4, 5, 6, 7 - tables limited to the targeted
-  # ecozones and jurisdictions
-  stable3 <- as.data.table(sim$table3[sim$table3$juris_id %in% thisAdmin$abreviation &
-    sim$table3$ecozone %in% eco, ])
-  stable4 <- as.data.table(sim$table4[sim$table4$juris_id %in% thisAdmin$abreviation &
-    sim$table4$ecozone %in% eco, ])
+  # not all ecozones are in tables 3-7. There may be some mismatch here.
+  # these are the ecozones in the tables
+  # id               name
+  # 4       Taiga Plains
+  # 5  Taiga Shield West
+  # 6 Boreal Shield West
+  # 7  Atlantic Maritime
+  # 9      Boreal Plains
+  # 10  Subhumid Prairies
+  # 12  Boreal Cordillera
+  # 13   Pacific Maritime
+  # 14 Montane Cordillera
+  # these are the ones that are not.
+  # id               name
+  # 8   Mixedwood Plains  - 7  Atlantic Maritime
+  # 11   Taiga Cordillera - 4 taiga plains
+  # 15      Hudson Plains - 6 Boreal Shield West
+  # 16  Taiga Shield East - 5  Taiga Shield West
+  # 17 Boreal Shield East - 6 Boreal Shield West
+  # 18  Semiarid Prairies - 10  Subhumid Prairies
+  ecoNotInT <- c(8, 11, 15, 16, 17, 18)
+  if (any(eco %in% ecoNotInT)) {
+    EcoBoundaryID <- c(7, 4, 6, 5, 6, 10)
+    ecoReplace <- data.table(ecoNotInT, EcoBoundaryID)
+    thisAdminT <- merge(ecoReplace, thisAdmin, by.x = "ecoNotInT", by.y = "EcoBoundaryID")
+  }
 
-   # table5 is different since there was not have enough data to fit models for
-  # all provinces.
-  # unique(sim$table5$juris_id)
-  # [1] "AB" "BC" "NB" "NL" "NT"
-  # Here we are hard-coding the closest equivalent province to
-  # have a complete set.
-  # This first If-statement is to catch the "no-province" match
+  stable3 <- as.data.table(sim$table3[sim$table3$juris_id %in% thisAdminT$abreviation &
+                                        sim$table3$ecozone %in% thisAdminT$EcoBoundaryID, ])
+  stable4 <- as.data.table(sim$table4[sim$table4$juris_id %in% thisAdminT$abreviation &
+                                        sim$table4$ecozone %in% thisAdminT$EcoBoundaryID, ])
+
+
   stable5.2 <- as.data.table(sim$table5[sim$table5$juris_id %in% thisAdmin$abreviation, ])
+
+  abreviation <- c("PE", "QC", "ON", "MB", "SK", "YK", "NU")
   ## DANGER HARD CODED: if NFIS changes table 5, this will no longer be valid
   # juris_id: there are only 5/13 possible
   # these are the provinces available: AB BC NB NF NT
@@ -288,10 +309,8 @@ browser()
   # "SK" - AB
   # "YK" - NT
   # "NU" - NT
-  abreviation <- c("PE", "QC", "ON", "MB", "SK", "YK", "NU")
-
   if (any(thisAdmin$abreviation %in% abreviation)) {
-    t5abreviation <- c("NB", "NB", "NB", "AB", "AB", "NT", "NT")
+    t5abreviation <- c("NB", "NL", "NL", "AB", "AB", "NT", "NT")
     abreviationReplace <- data.table(abreviation, t5abreviation)
     # replace the abbreviations and select
     thisAdmin5 <- merge(abreviationReplace, thisAdmin)
@@ -301,7 +320,7 @@ browser()
   # This second "if-statement" is to catch is the "no-ecozone" match
   ### THIS NEEDS TO BE TESTED
   if (nrow(stable5.2) > 0) {
-    stable5 <- stable5.2[ecozone %in% eco, ]
+    stable5 <- stable5.2[ecozone %in% thisAdminT$EcoBoundaryID, ]
   } else {
     stop(
       "There are no matches found for the parameters needed to execute the Boudewyn models.",
@@ -309,44 +328,14 @@ browser()
     )
   }
 
-  # there are 12/15 ecozones in table5. Once you narrow the table to admin
-  # abreviation (which is done above), there might be more mismatch. This
-  # solution only works for SK.
-  # These are the ones in table5
-  # id               name
-  # 4       Taiga Plains
-  # 5  Taiga Shield West
-  # 6 Boreal Shield West
-  # 7  Atlantic Maritime
-  # 9      Boreal Plains
-  # 10  Subhumid Prairies
-  # 12  Boreal Cordillera
-  # 13   Pacific Maritime
-  # 14 Montane Cordillera
-
-  # these are the ones that are not
-  # id               name
-  # 8   Mixedwood Plains  - 7  Atlantic Maritime
-  # 11   Taiga Cordillera - 4 taiga plains
-  # 15      Hudson Plains - 6 Boreal Shield West
-  # 16  Taiga Shield East - 5  Taiga Shield West
-  # 17 Boreal Shield East - 6 Boreal Shield West
-  # 18  Semiarid Prairies - 10  Subhumid Prairies
-  ecoNotInT5 <- c(8, 11, 15, 16, 17, 18)
-  if (any(eco %in% ecoNotInT5)) {
-    EcoBoundaryID <- c(7, 4, 6, 5, 6, 10)
-    ecoReplace <- data.table(ecoNotInT5, EcoBoundaryID)
-    thisAdmin5.1 <- merge(ecoReplace, thisAdmin5, by = "EcoBoundaryID")
-    stable5 <- as.data.table(stable5[stable5$ecozone %in% thisAdmin5.1$EcoBoundaryID, ])
-  }
   if (nrow(stable5) < 1) {
     stop("There is a problem finding a parameter match in table 5.")
   }
 
-  stable6 <- as.data.table(sim$table6[sim$table6$juris_id %in% thisAdmin$abreviation &
-    sim$table6$ecozone %in% eco, ])
-  stable7 <- as.data.table(sim$table7[sim$table7$juris_id %in% thisAdmin$abreviation &
-    sim$table6$ecozone %in% eco, ])
+  stable6 <- as.data.table(sim$table6[sim$table6$juris_id %in% thisAdminT$abreviation &
+                                        sim$table6$ecozone %in% thisAdminT$EcoBoundaryID, ])
+  stable7 <- as.data.table(sim$table7[sim$table7$juris_id %in% thisAdminT$abreviation &
+                                        sim$table6$ecozone %in% thisAdminT$EcoBoundaryID, ])
   # END reducing Biomass model parameter tables -----------------------------------------------
 
   ##NOTES: lines below are old (spadesCBM-C++). We need to find a generic way to
@@ -401,7 +390,7 @@ browser()
   # assuming gcMeta has now 5 columns, it needs a 7th: spatial_unit_id. This
   # will be used in the convertM3biom() fnct to link to the right ecozone
   # and it only needs the gc we are using in this sim.
-  gcThisSim <- unique(sim$spatialDT[,.(gcids, spatial_unit_id, ecozones)])
+  gcThisSim <- unique(sim$level3DT[,.(gcids, spatial_unit_id, ecozones)])
   #gcThisSim <- as.data.table(unique(cbind(sim$spatialUnits, sim$gcids)))
   #names(gcThisSim) <- c("spatial_unit_id", "gcids")
   setkey(gcThisSim, gcids)
