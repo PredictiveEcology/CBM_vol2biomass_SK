@@ -245,21 +245,6 @@ Init <- function(sim) {
   thisAdmin <- sim$cbmAdmin[sim$cbmAdmin$SpatialUnitID %in% spu & sim$cbmAdmin$EcoBoundaryID %in% eco, ]
 
   # START reducing Biomass model parameter tables -----------------------------------------------
-  # reducing the parameter tables to the jurisdiction or ecozone we have in the study area
-  ## To run module independently, the gcID used in this translation can be specified here
-  # if(!suppliedElsewhere("spatialUnits",sim)){
-  #   spu  <- ### USER TO PROVIDE SPU FOR EACH gcID###########
-  # }else{
-  ####spu <- unique(sim$spatialUnits)
-  # }
-  # if(!suppliedElsewhere("ecozones",sim)){
-  #   eco <- ### USER TO PROVIDE SPU FOR EACH gcID###########
-  # }else{
-
-  ####eco <- unique(sim$ecozones)
-  # }
-  ####thisAdmin <- sim$cbmAdmin[sim$cbmAdmin$SpatialUnitID %in% spu & sim$cbmAdmin$EcoBoundaryID %in% eco, ]
-
   # not all ecozones are in tables 3-7. There may be some mismatch here.
   # these are the ecozones in the tables
   # id               name
@@ -280,18 +265,19 @@ Init <- function(sim) {
   # 16  Taiga Shield East - 5  Taiga Shield West
   # 17 Boreal Shield East - 6 Boreal Shield West
   # 18  Semiarid Prairies - 10  Subhumid Prairies
+
   ecoNotInT <- c(8, 11, 15, 16, 17, 18)
   if (any(eco %in% ecoNotInT)) {
     EcoBoundaryID <- c(7, 4, 6, 5, 6, 10)
     ecoReplace <- data.table(ecoNotInT, EcoBoundaryID)
-    thisAdminT <- merge(ecoReplace, thisAdmin, by.x = "ecoNotInT", by.y = "EcoBoundaryID")
+    thisAdmin <- merge(ecoReplace, thisAdmin, by.x = "ecoNotInT", by.y = "EcoBoundaryID")
   }
 
   if (any(eco %in% ecoNotInT)) {
-  stable3 <- as.data.table(sim$table3[sim$table3$juris_id %in% thisAdminT$abreviation &
-                                        sim$table3$ecozone %in% thisAdminT$EcoBoundaryID, ])
-  stable4 <- as.data.table(sim$table4[sim$table4$juris_id %in% thisAdminT$abreviation &
-                                        sim$table4$ecozone %in% thisAdminT$EcoBoundaryID, ])
+  stable3 <- as.data.table(sim$table3[sim$table3$juris_id %in% thisAdmin$abreviation &
+                                        sim$table3$ecozone %in% thisAdmin$EcoBoundaryID, ])
+  stable4 <- as.data.table(sim$table4[sim$table4$juris_id %in% thisAdmin$abreviation &
+                                        sim$table4$ecozone %in% thisAdmin$EcoBoundaryID, ])
   } else {
     stable3 <- as.data.table(sim$table3[sim$table3$juris_id %in% thisAdmin$abreviation &
                                           sim$table3$ecozone %in% eco, ])
@@ -318,7 +304,7 @@ Init <- function(sim) {
     thisAdmin5 <- merge(abreviationReplace, thisAdmin)
     thisAdmin5[, c("abreviation", "t5abreviation") := list(t5abreviation, NULL)]
     stable5.2 <- as.data.table(sim$table5[sim$table5$juris_id %in% thisAdmin5$abreviation, ])
-    stable5 <- stable5.2[ecozone %in% thisAdminT$EcoBoundaryID, ]
+    stable5 <- stable5.2[ecozone %in% thisAdmin$EcoBoundaryID, ]
   } else {
     stable5.2 <- as.data.table(sim$table5[sim$table5$juris_id %in% thisAdmin$abreviation, ])
     stable5 <- stable5.2[ecozone %in% thisAdmin$EcoBoundaryID, ]
@@ -340,10 +326,10 @@ Init <- function(sim) {
   }
 
   if (any(eco %in% ecoNotInT)) {
-    stable6 <- as.data.table(sim$table3[sim$table3$juris_id %in% thisAdminT$abreviation &
-                                          sim$table3$ecozone %in% thisAdminT$EcoBoundaryID, ])
-    stable7 <- as.data.table(sim$table4[sim$table4$juris_id %in% thisAdminT$abreviation &
-                                          sim$table4$ecozone %in% thisAdminT$EcoBoundaryID, ])
+    stable6 <- as.data.table(sim$table3[sim$table3$juris_id %in% thisAdmin$abreviation &
+                                          sim$table3$ecozone %in% thisAdmin$EcoBoundaryID, ])
+    stable7 <- as.data.table(sim$table4[sim$table4$juris_id %in% thisAdmin$abreviation &
+                                          sim$table4$ecozone %in% thisAdmin$EcoBoundaryID, ])
   } else {
     stable6 <- as.data.table(sim$table3[sim$table3$juris_id %in% thisAdmin$abreviation &
                                           sim$table3$ecozone %in% eco, ])
@@ -396,7 +382,6 @@ Init <- function(sim) {
     }
     ### PUT SOMETHING HERE IF THE SPECIES DONT MATCH...NOT SURE WHAT - ERROR MESSAGE?
   }
-
   ##TODO CHECK - this in not tested NOT SURE IF THIS IS NEEDED NOW THAT WE ARE WORKING WITH FACTORS
   # if (!unique(unique(userGcM3$gcids) == unique(gcMeta$gcids))) {
   #   stop("There is a missmatch in the growth curves of the userGcM3 and the gcMeta")
@@ -404,7 +389,7 @@ Init <- function(sim) {
   # assuming gcMeta has now 5 columns, it needs a 7th: spatial_unit_id. This
   # will be used in the convertM3biom() fnct to link to the right ecozone
   # and it only needs the gc we are using in this sim.
-  gcThisSim <- unique(sim$spatialDT[,.(gcids, spatial_unit_id, ecozones)])
+  gcThisSim <- unique(sim$level3DT[,.(gcids, spatial_unit_id, ecozones)]) #CAMILLE DEC 2024: swapped sim$spatialDT for sim$level3DT for Vini's example. I'm not sure if this will work for other datasets..
   #gcThisSim <- as.data.table(unique(cbind(sim$spatialUnits, sim$gcids)))
   #names(gcThisSim) <- c("spatial_unit_id", "gcids")
   setkey(gcThisSim, gcids)
