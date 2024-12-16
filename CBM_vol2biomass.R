@@ -209,7 +209,6 @@ Init <- function(sim) {
   # plot
   # Test for steps of 1 in the yield curves
   ##TODO have to make this more generic. Right now names of columns are fixed.
-browser()
   ageJumps <- sim$userGcM3[, list(jumps = unique(diff(as.numeric(Age)))), by = "gcids"]
   idsWithJumpGT1 <- ageJumps[jumps > 1]$gcids
   if (length(idsWithJumpGT1)) {
@@ -244,7 +243,6 @@ browser()
   eco <- unique(na.omit(sim$ecozones))
 
   thisAdmin <- sim$cbmAdmin[sim$cbmAdmin$SpatialUnitID %in% spu & sim$cbmAdmin$EcoBoundaryID %in% eco, ]
-
 
   # START reducing Biomass model parameter tables -----------------------------------------------
   # reducing the parameter tables to the jurisdiction or ecozone we have in the study area
@@ -289,13 +287,17 @@ browser()
     thisAdminT <- merge(ecoReplace, thisAdmin, by.x = "ecoNotInT", by.y = "EcoBoundaryID")
   }
 
+  if (any(eco %in% ecoNotInT)) {
   stable3 <- as.data.table(sim$table3[sim$table3$juris_id %in% thisAdminT$abreviation &
                                         sim$table3$ecozone %in% thisAdminT$EcoBoundaryID, ])
   stable4 <- as.data.table(sim$table4[sim$table4$juris_id %in% thisAdminT$abreviation &
                                         sim$table4$ecozone %in% thisAdminT$EcoBoundaryID, ])
-
-
-  stable5.2 <- as.data.table(sim$table5[sim$table5$juris_id %in% thisAdmin$abreviation, ])
+  } else {
+    stable3 <- as.data.table(sim$table3[sim$table3$juris_id %in% thisAdmin$abreviation &
+                                          sim$table3$ecozone %in% eco, ])
+    stable4 <- as.data.table(sim$table4[sim$table4$juris_id %in% thisAdmin$abreviation &
+                                          sim$table4$ecozone %in% eco, ])
+  }
 
   abreviation <- c("PE", "QC", "ON", "MB", "SK", "YK", "NU")
   ## DANGER HARD CODED: if NFIS changes table 5, this will no longer be valid
@@ -316,26 +318,39 @@ browser()
     thisAdmin5 <- merge(abreviationReplace, thisAdmin)
     thisAdmin5[, c("abreviation", "t5abreviation") := list(t5abreviation, NULL)]
     stable5.2 <- as.data.table(sim$table5[sim$table5$juris_id %in% thisAdmin5$abreviation, ])
+    stable5 <- stable5.2[ecozone %in% thisAdmin5$EcoBoundaryID, ]
+  } else {
+    stable5.2 <- as.data.table(sim$table5[sim$table5$juris_id %in% thisAdmin$abreviation, ])
+    stable5 <- stable5.2[ecozone %in% thisAdmin$EcoBoundaryID, ]
   }
   # This second "if-statement" is to catch is the "no-ecozone" match
   ### THIS NEEDS TO BE TESTED
-  if (nrow(stable5.2) > 0) {
-    stable5 <- stable5.2[ecozone %in% thisAdminT$EcoBoundaryID, ]
-  } else {
-    stop(
-      "There are no matches found for the parameters needed to execute the Boudewyn models.",
-      "Please manually find matches for table 5."
-    )
-  }
+  #CAMILLE DEC 2024: commenting this out for now as it doesn't work with the changes to how the earlier tables deal with ecozones.
+  # if (nrow(stable5.2) > 0) {
+  #   stable5 <- stable5.2[ecozone %in% thisAdminT$EcoBoundaryID, ]
+  # } else {
+  #   stop(
+  #     "There are no matches found for the parameters needed to execute the Boudewyn models.",
+  #     "Please manually find matches for table 5."
+  #   )
+  # }
 
   if (nrow(stable5) < 1) {
     stop("There is a problem finding a parameter match in table 5.")
   }
 
-  stable6 <- as.data.table(sim$table6[sim$table6$juris_id %in% thisAdminT$abreviation &
-                                        sim$table6$ecozone %in% thisAdminT$EcoBoundaryID, ])
-  stable7 <- as.data.table(sim$table7[sim$table7$juris_id %in% thisAdminT$abreviation &
-                                        sim$table6$ecozone %in% thisAdminT$EcoBoundaryID, ])
+  if (any(eco %in% ecoNotInT)) {
+    stable6 <- as.data.table(sim$table3[sim$table3$juris_id %in% thisAdminT$abreviation &
+                                          sim$table3$ecozone %in% thisAdminT$EcoBoundaryID, ])
+    stable7 <- as.data.table(sim$table4[sim$table4$juris_id %in% thisAdminT$abreviation &
+                                          sim$table4$ecozone %in% thisAdminT$EcoBoundaryID, ])
+  } else {
+    stable6 <- as.data.table(sim$table3[sim$table3$juris_id %in% thisAdmin$abreviation &
+                                          sim$table3$ecozone %in% eco, ])
+    stable7 <- as.data.table(sim$table4[sim$table4$juris_id %in% thisAdmin$abreviation &
+                                          sim$table4$ecozone %in% eco, ])
+  }
+
   # END reducing Biomass model parameter tables -----------------------------------------------
 
   ##NOTES: lines below are old (spadesCBM-C++). We need to find a generic way to
@@ -386,11 +401,10 @@ browser()
   # if (!unique(unique(userGcM3$gcids) == unique(gcMeta$gcids))) {
   #   stop("There is a missmatch in the growth curves of the userGcM3 and the gcMeta")
   # }
-
   # assuming gcMeta has now 5 columns, it needs a 7th: spatial_unit_id. This
   # will be used in the convertM3biom() fnct to link to the right ecozone
   # and it only needs the gc we are using in this sim.
-  gcThisSim <- unique(sim$level3DT[,.(gcids, spatial_unit_id, ecozones)])
+  gcThisSim <- unique(sim$spatialDT[,.(gcids, spatial_unit_id, ecozones)])
   #gcThisSim <- as.data.table(unique(cbind(sim$spatialUnits, sim$gcids)))
   #names(gcThisSim) <- c("spatial_unit_id", "gcids")
   setkey(gcThisSim, gcids)
