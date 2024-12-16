@@ -16,7 +16,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "CBM_vol2biomass.Rmd")),
   reqdPkgs = list(
-    "PredictiveEcology/CBMutils@development",
+    "PredictiveEcology/CBMutils@development", "data.table",
     "ggforce", "ggplot2", "ggpubr", "googledrive", "mgcv", "quickPlot", "robustbase"
   ),
   parameters = rbind(
@@ -318,7 +318,7 @@ Init <- function(sim) {
     thisAdmin5 <- merge(abreviationReplace, thisAdmin)
     thisAdmin5[, c("abreviation", "t5abreviation") := list(t5abreviation, NULL)]
     stable5.2 <- as.data.table(sim$table5[sim$table5$juris_id %in% thisAdmin5$abreviation, ])
-    stable5 <- stable5.2[ecozone %in% thisAdmin5$EcoBoundaryID, ]
+    stable5 <- stable5.2[ecozone %in% thisAdminT$EcoBoundaryID, ]
   } else {
     stable5.2 <- as.data.table(sim$table5[sim$table5$juris_id %in% thisAdmin$abreviation, ])
     stable5 <- stable5.2[ecozone %in% thisAdmin$EcoBoundaryID, ]
