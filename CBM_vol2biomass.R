@@ -326,14 +326,14 @@ Init <- function(sim) {
   }
 
   if (any(eco %in% ecoNotInT)) {
-    stable6 <- as.data.table(sim$table3[sim$table3$juris_id %in% thisAdmin$abreviation &
+    stable6 <- as.data.table(sim$table6[sim$table3$juris_id %in% thisAdmin$abreviation &
                                           sim$table3$ecozone %in% thisAdmin$EcoBoundaryID, ])
-    stable7 <- as.data.table(sim$table4[sim$table4$juris_id %in% thisAdmin$abreviation &
+    stable7 <- as.data.table(sim$table7[sim$table4$juris_id %in% thisAdmin$abreviation &
                                           sim$table4$ecozone %in% thisAdmin$EcoBoundaryID, ])
   } else {
-    stable6 <- as.data.table(sim$table3[sim$table3$juris_id %in% thisAdmin$abreviation &
+    stable6 <- as.data.table(sim$table6[sim$table3$juris_id %in% thisAdmin$abreviation &
                                           sim$table3$ecozone %in% eco, ])
-    stable7 <- as.data.table(sim$table4[sim$table4$juris_id %in% thisAdmin$abreviation &
+    stable7 <- as.data.table(sim$table7[sim$table4$juris_id %in% thisAdmin$abreviation &
                                           sim$table4$ecozone %in% eco, ])
   }
 
@@ -403,7 +403,7 @@ Init <- function(sim) {
 
   curveID <- sim$curveID
   if (!is.null(sim$level3DT)) {
-    gcidsLevels <- levels(sim$level3DT$gcids)
+    gcidsLevels <-  unique(sim$level3DT$gcids)     #levels(sim$level3DT$gcids)  CAMILLE DEC 2024: this has been changed to work with Vini's dataset. I think it has something to do with situations where there is only 1 option. levels() doesn't seem to like that.
     gcids <- factor(gcidsCreate(gcMeta[, ..curveID]), levels = gcidsLevels)
   } else {
     gcids <- factor(gcidsCreate(gcMeta[, ..curveID]))
@@ -493,23 +493,25 @@ Init <- function(sim) {
   birchColsChg <- c("fol", "other")
   ##TODO this (which curve to replace the wonky ones with) will have to be
   ##decided by the user after they look at all the curves.
-  if (any(cumPoolsRaw$gcids == 55)) {
-    cumPoolsRaw[gcids %in% birchGcIds, fol := rep(cumPoolsRaw[gcids == 55, fol],length(birchGcIds))]
-    cumPoolsRaw[gcids %in% birchGcIds, other := rep(cumPoolsRaw[gcids == 55, other],length(birchGcIds))]
-  }else{
-    meta55 <- sim$gcMeta[gcids == 55,]
-    setnames(meta55, "gcids", "gcids")
-    meta55$spatial_unit_id <- 28
-    meta55$ecozones <- 9
-    gc55 <- cumPoolsCreate(meta55$species, meta55, userGcM3[gcids == 55,],
-                               stable3, stable4, stable5, stable6, stable7, thisAdmin)
-    ##adding the age 0 and 0 growth
-    gc550s <- data.frame(id = 55, age = 0, totMerch = 0, fol = 0, other = 0, ecozone = 9, gcids = 55)
-    gc55raw <- rbind(gc55, gc550s)
-    setorderv(gc55raw, c("gcids", "age"))
-    cumPoolsRaw[gcids %in% birchGcIds,fol := gc55raw[, fol]]
-    cumPoolsRaw[gcids %in% birchGcIds,other := gc55raw[, other]]
-  }
+
+  # CAMILLE DEC 2024: this below only works when the dataset uses this gcid. commenting out for Vini's example as it is not used and creates and error if ran.
+  # if (any(cumPoolsRaw$gcids == 55)) {
+  #   cumPoolsRaw[gcids %in% birchGcIds, fol := rep(cumPoolsRaw[gcids == 55, fol],length(birchGcIds))]
+  #   cumPoolsRaw[gcids %in% birchGcIds, other := rep(cumPoolsRaw[gcids == 55, other],length(birchGcIds))]
+  # }else{
+  #   meta55 <- sim$gcMeta[gcids == 55,]
+  #   setnames(meta55, "gcids", "gcids")
+  #   meta55$spatial_unit_id <- 28
+  #   meta55$ecozones <- 9
+  #   gc55 <- cumPoolsCreate(meta55$species, meta55, userGcM3[gcids == 55,],
+  #                              stable3, stable4, stable5, stable6, stable7, thisAdmin)
+  #   ##adding the age 0 and 0 growth
+  #   gc550s <- data.frame(id = 55, age = 0, totMerch = 0, fol = 0, other = 0, ecozone = 9, gcids = 55)
+  #   gc55raw <- rbind(gc55, gc550s)
+  #   setorderv(gc55raw, c("gcids", "age"))
+  #   cumPoolsRaw[gcids %in% birchGcIds,fol := gc55raw[, fol]]
+  #   cumPoolsRaw[gcids %in% birchGcIds,other := gc55raw[, other]]
+  # }
 
   cumPoolsClean <- cumPoolsSmooth(cumPoolsRaw) ##TODO Caching seems to produce an error.
   #Note: this will produce a warning if one of the curve smoothing efforts doesn't converge
