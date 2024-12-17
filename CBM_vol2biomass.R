@@ -311,15 +311,14 @@ Init <- function(sim) {
   }
   # This second "if-statement" is to catch is the "no-ecozone" match
   ### THIS NEEDS TO BE TESTED
-  #CAMILLE DEC 2024: commenting this out for now as it doesn't work with the changes to how the earlier tables deal with ecozones.
-  # if (nrow(stable5.2) > 0) {
-  #   stable5 <- stable5.2[ecozone %in% thisAdminT$EcoBoundaryID, ]
-  # } else {
-  #   stop(
-  #     "There are no matches found for the parameters needed to execute the Boudewyn models.",
-  #     "Please manually find matches for table 5."
-  #   )
-  # }
+  if (nrow(stable5.2) > 0) {
+    stable5 <- stable5.2[ecozone %in% thisAdmin$EcoBoundaryID, ]
+  } else {
+    stop(
+      "There are no matches found for the parameters needed to execute the Boudewyn models.",
+      "Please manually find matches for table 5."
+    )
+  }
 
   if (nrow(stable5) < 1) {
     stop("There is a problem finding a parameter match in table 5.")
@@ -494,25 +493,25 @@ Init <- function(sim) {
   ##TODO this (which curve to replace the wonky ones with) will have to be
   ##decided by the user after they look at all the curves.
 
-  # CAMILLE DEC 2024: this below only works when the dataset uses this gcid. commenting out for Vini's example as it is not used and creates and error if ran.
-  # if (any(cumPoolsRaw$gcids == 55)) {
-  #   cumPoolsRaw[gcids %in% birchGcIds, fol := rep(cumPoolsRaw[gcids == 55, fol],length(birchGcIds))]
-  #   cumPoolsRaw[gcids %in% birchGcIds, other := rep(cumPoolsRaw[gcids == 55, other],length(birchGcIds))]
-  # }else{
-  #   meta55 <- sim$gcMeta[gcids == 55,]
-  #   setnames(meta55, "gcids", "gcids")
-  #   meta55$spatial_unit_id <- 28
-  #   meta55$ecozones <- 9
-  #   gc55 <- cumPoolsCreate(meta55$species, meta55, userGcM3[gcids == 55,],
-  #                              stable3, stable4, stable5, stable6, stable7, thisAdmin)
-  #   ##adding the age 0 and 0 growth
-  #   gc550s <- data.frame(id = 55, age = 0, totMerch = 0, fol = 0, other = 0, ecozone = 9, gcids = 55)
-  #   gc55raw <- rbind(gc55, gc550s)
-  #   setorderv(gc55raw, c("gcids", "age"))
-  #   cumPoolsRaw[gcids %in% birchGcIds,fol := gc55raw[, fol]]
-  #   cumPoolsRaw[gcids %in% birchGcIds,other := gc55raw[, other]]
-  # }
-
+if(any(cumPoolsRaw$gcids == 37 | cumPoolsRaw$gcids == 58)) {
+  if (any(cumPoolsRaw$gcids == 55)) {
+    cumPoolsRaw[gcids %in% birchGcIds, fol := rep(cumPoolsRaw[gcids == 55, fol],length(birchGcIds))]
+    cumPoolsRaw[gcids %in% birchGcIds, other := rep(cumPoolsRaw[gcids == 55, other],length(birchGcIds))]
+  }else{
+    meta55 <- sim$gcMeta[gcids == 55,]
+    setnames(meta55, "gcids", "gcids")
+    meta55$spatial_unit_id <- 28
+    meta55$ecozones <- 9
+    gc55 <- cumPoolsCreate(meta55$species, meta55, userGcM3[gcids == 55,],
+                               stable3, stable4, stable5, stable6, stable7, thisAdmin)
+    ##adding the age 0 and 0 growth
+    gc550s <- data.frame(id = 55, age = 0, totMerch = 0, fol = 0, other = 0, ecozone = 9, gcids = 55)
+    gc55raw <- rbind(gc55, gc550s)
+    setorderv(gc55raw, c("gcids", "age"))
+    cumPoolsRaw[gcids %in% birchGcIds,fol := gc55raw[, fol]]
+    cumPoolsRaw[gcids %in% birchGcIds,other := gc55raw[, other]]
+  }
+}
   cumPoolsClean <- cumPoolsSmooth(cumPoolsRaw) ##TODO Caching seems to produce an error.
   #Note: this will produce a warning if one of the curve smoothing efforts doesn't converge
 
