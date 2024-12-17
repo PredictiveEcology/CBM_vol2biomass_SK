@@ -326,15 +326,15 @@ Init <- function(sim) {
   }
 
   if (any(eco %in% ecoNotInT)) {
-    stable6 <- as.data.table(sim$table6[sim$table3$juris_id %in% thisAdmin$abreviation &
-                                          sim$table3$ecozone %in% thisAdmin$EcoBoundaryID, ])
-    stable7 <- as.data.table(sim$table7[sim$table4$juris_id %in% thisAdmin$abreviation &
-                                          sim$table4$ecozone %in% thisAdmin$EcoBoundaryID, ])
+    stable6 <- as.data.table(sim$table6[sim$table6$juris_id %in% thisAdmin$abreviation &
+                                          sim$table6$ecozone %in% thisAdmin$EcoBoundaryID, ])
+    stable7 <- as.data.table(sim$table7[sim$table7$juris_id %in% thisAdmin$abreviation &
+                                          sim$table7$ecozone %in% thisAdmin$EcoBoundaryID, ])
   } else {
-    stable6 <- as.data.table(sim$table6[sim$table3$juris_id %in% thisAdmin$abreviation &
-                                          sim$table3$ecozone %in% eco, ])
-    stable7 <- as.data.table(sim$table7[sim$table4$juris_id %in% thisAdmin$abreviation &
-                                          sim$table4$ecozone %in% eco, ])
+    stable6 <- as.data.table(sim$table6[sim$table6$juris_id %in% thisAdmin$abreviation &
+                                          sim$table6$ecozone %in% eco, ])
+    stable7 <- as.data.table(sim$table7[sim$table7$juris_id %in% thisAdmin$abreviation &
+                                          sim$table7$ecozone %in% eco, ])
   }
 
   # END reducing Biomass model parameter tables -----------------------------------------------
