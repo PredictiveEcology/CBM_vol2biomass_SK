@@ -16,7 +16,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "CBM_vol2biomass.Rmd")),
   reqdPkgs = list(
-    "PredictiveEcology/CBMutils@development", "PredictiveEcology/LandR@development",
+    "PredictiveEcology/CBMutils@development (>=2.0.2.0002)",
     "ggforce", "ggplot2", "ggpubr", "googledrive", "mgcv", "quickPlot", "robustbase", "data.table"
   ),
   parameters = rbind(
@@ -146,7 +146,7 @@ defineModule(sim, list(
       for each growth curve id (in this data.table id and gcids are
       the same), by age and ecozone"),
     createsOutput(
-      objectName = "growth_increments", objectClass = "matrix",
+      objectName = "growth_increments", objectClass = "data.table",
       desc = "Carbon increment matrix by age for each gcids")
   )
 ))
@@ -223,6 +223,7 @@ Init <- function(sim) {
   userGcM3 <- sim$userGcM3
 
   # START reducing Biomass model parameter tables --------------------------------------------
+  if (is.null(sim$spatialDT)) stop("sim$spatialDT not found")
   spu <- unique(sim$spatialDT$spatial_unit_id)
   eco <- unique(sim$spatialDT$ecozones)
 
@@ -243,42 +244,27 @@ Init <- function(sim) {
   # data frame with the same columns as gcMetaEg.csv OR is could be only curve
   # id and species.
   ## Check that all required columns are available:
-  ## "gcids" "species" "canfi_species" "genus" "forest_type_id"
-  gcMeta <- sim$gcMeta
-
-  if (!all(c(sim$curveID, "species") %in% names(gcMeta))) stop(
+  ## "gcids" "species" "canfi_species" "genus" "sw_hw"
+  if (!all(c(sim$curveID, "species") %in% names(sim$gcMeta))) stop(
     "gcMeta is missing column(s): ",
-    paste(shQuote(setdiff(c(sim$curveID, "species"), names(gcMeta))), collapse = ", "))
+    paste(shQuote(setdiff(c(sim$curveID, "species"), names(sim$gcMeta))), collapse = ", "))
 
-  if (!all(c("canfi_species", "genus", "forest_type_id") %in% names(gcMeta))) {
+  if (any(!c("canfi_species", "genus", "sw_hw") %in% names(sim$gcMeta))){
 
-    gcMeta[, species_lower := trimws(tolower(species))]
+    sppMatchTable <- CBMutils::sppMatch(
+      sim$gcMeta$species, return = c("CanfiCode", "NFI", "Broadleaf"))[, .(
+        canfi_species = CanfiCode,
+        sw_hw         = data.table::fifelse(Broadleaf, "hw", "sw"),
+        genus         = sapply(strsplit(NFI, "_"), `[[`, 1)
+      )]
 
-    # this builds the LandRSpecies table that has all the possible options for canfi_species, genus (4 letter code), species (3 letter code)
-    landRSpecies <- LandR::sppEquivalencies_CA[, .(
-      canfi_code     = CanfiCode,
-      name           = tolower(EN_generic_full),
-      forest_type_id = sapply(Broadleaf, ifelse, "1", "3"),
-      is_sw = Broadleaf,
-      NFI
-    )] |>
-      tidyr::extract(NFI, into = c("genus", "species"), "(.*)_([^_]+)$") |>
-      data.table::as.data.table()
-
-    # check if all the species are in the canfi_species table
-    if (!all(gcMeta$species_lower %in% landRSpecies$name)) stop(
-      "gcMeta specie(s) not found in LandR::sppEquivalencies_CA table: ",
-      paste(shQuote(
-        unique(subset(gcMeta, !species_lower %in% landRSpecies$name)$species)
-      ), collapse = ", "))
-
-    gcMeta <- merge(
-      gcMeta,
-      landRSpecies[, .(species_lower = name, canfi_code, genus, forest_type_id)],
-      by = "species_lower")[, species_lower := NULL]
-    data.table::setkey(gcMeta, gcids)
+    sim$gcMeta <- cbind(
+      sim$gcMeta[, .SD, .SDcols = setdiff(names(sim$gcMeta), names(sppMatchTable))],
+      sppMatchTable)
+    rm(sppMatchTable)
   }
 
+  gcMeta <- sim$gcMeta
   setkey(gcMeta, gcids)
   if (!unique(unique(userGcM3$gcids) == unique(gcMeta$gcids))) {
     stop("There is a missmatch in the growth curves of the userGcM3 and the gcMeta")
@@ -287,7 +273,7 @@ Init <- function(sim) {
   # assuming gcMeta has now 5 columns, it needs 2 more: spatial_unit_id and ecozone. This
   # will be used in the convertM3biom() fnct to link to the right ecozone
   # and it only needs the gc we are using in this sim.
-  gcThisSim <- unique(sim$spatialDT[,.(gcids, spatial_unit_id, ecozones)])
+  gcThisSim <- unique(as.data.table(sim$spatialDT)[,.(gcids, spatial_unit_id, ecozones)])
   setkey(gcThisSim, gcids)
   setkey(gcMeta, gcids)
   gcMeta <- merge(gcMeta, gcThisSim)
@@ -415,7 +401,7 @@ Init <- function(sim) {
   message(crayon::red("User: please inspect figures of the raw and smoothed translation of your growth curves in: ",
                       figPath))
   sim$cumPoolsClean <- cumPoolsClean
-  colsToUseForestType <- c("forest_type_id", "gcids")
+  colsToUseForestType <- c("sw_hw", "gcids")
   forestType <- unique(gcMeta[, ..colsToUseForestType])
   #       #FYI:
   #       # cbmTables$forest_type
@@ -436,7 +422,7 @@ Init <- function(sim) {
 
   outCols <- c("id", "ecozone", "totMerch", "fol", "other")
   cumPoolsClean[, (outCols) := NULL]
-  keepCols <- c("gcids", "age", "merch_inc", "foliage_inc", "other_inc", "forest_type_id")
+  keepCols <- c("gcids", "age", "merch_inc", "foliage_inc", "other_inc", "sw_hw")
   incCols <- c("merch_inc", "foliage_inc", "other_inc")
   setnames(cumPoolsClean,names(cumPoolsClean),
            keepCols)
@@ -448,9 +434,9 @@ Init <- function(sim) {
   # Assertions
   if (isTRUE(P(sim)$doAssertions)) {
     # All should have same min age
-    if (length(unique(increments[, min(age), by = "forest_type_id"]$V1)) != 1)
+    if (length(unique(increments[, min(age), by = "sw_hw"]$V1)) != 1)
       stop("All ages should start at the same age for each curveID")
-    if (length(unique(increments[, max(age), by = "forest_type_id"]$V1)) != 1)
+    if (length(unique(increments[, max(age), by = "sw_hw"]$V1)) != 1)
       stop("All ages should end at the same age for each curveID")
   }
   ## replace increments that are NA with 0s
@@ -613,6 +599,8 @@ plotFun <- function(sim) {
                                  fun = fread,
                                  purge = 7
                                  )
+
+        sim$gcMeta[, sw_hw := data.table::fifelse(forest_type_id == 1, "sw", "hw")]
   }
 
   # cbmAdmin: this is needed to match species and parameters. Boudewyn et al 2007
