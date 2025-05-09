@@ -192,10 +192,8 @@ doEvent.CBM_vol2biomass <- function(sim, eventTime, eventType) {
 
 Init <- function(sim) {
   # user provides userGcM3: incoming cumulative m3/ha
-  # plot
-  # Test for steps of 1 in the yield curves
-  ##TODO have to make this more generic. Right now names of columns are fixed.
 
+  ##TODO have to make this more generic. Right now names of columns are fixed.
   ageJumps <- sim$userGcM3[, list(jumps = unique(diff(as.numeric(Age)))), by = "gcids"]
   idsWithJumpGT1 <- ageJumps[jumps > 1]$gcids
   if (length(idsWithJumpGT1)) {
@@ -213,12 +211,23 @@ Init <- function(sim) {
       stop("There are still yield curves that are not annually resolved")
   }
 
+  # Creates or sets the vol2biomass outputs subfolder (inside the general outputs folder)
+  if (!is.null(P(sim)$outputFigurePath) || !is.na(P(sim)$outputFigurePath)){
+    figPath <- file.path(outputPath(sim), "CBM_vol2biomass_figures")
+    dir.create(figPath, recursive = TRUE, showWarnings = FALSE)
+  }else{
+    figPath <- P(sim)$outputFigurePath
+    if (!file.exists(figPath)) stop("Output figure path not found: ", figPath)
+  }
+
   sim$volCurves <- ggplot(data = sim$userGcM3, aes(x = Age, y = MerchVolume, group = gcids, colour = factor(gcids))) +
-    geom_line() + theme_bw() ## TODO: change to Plots()
-  message("User: please look at the curve you provided via sim$volCurves")
-  ## not all curves provided are used in the simulation - and ***FOR NOW*** each
-  ## pixels only gets assigned one growth curve (no transition, no change in
-  ## productivity).
+    geom_line() + theme_bw()
+  SpaDES.core::Plots(sim$volCurves,
+                     filename = "volCurves",
+                     path = figPath,
+                     ggsaveArgs = list(width = 7, height = 5, units = "in", dpi = 300),
+                     types = "png")
+  message("User: please look at the curve you provided via sim$volCurves or the volCurves.png file in the outputs folder")
 
   userGcM3 <- sim$userGcM3
 
@@ -240,9 +249,10 @@ Init <- function(sim) {
 
   # END reducing Biomass model parameter tables -----------------------------------------------
 
-  # Read-in user provided meta data for growth curves. This could be a complete
-  # data frame with the same columns as gcMetaEg.csv OR is could be only curve
+  # START Reading in user provided meta data for growth curves --------------------------------------------
+  # This could be a complete data frame with the same columns as gcMetaEg.csv OR is could be only curve
   # id and species.
+
   ## Check that all required columns are available:
   ## "gcids" "species" "canfi_species" "genus" "sw_hw"
   if (!all(c(sim$curveID, "species") %in% names(sim$gcMeta))) stop(
@@ -270,7 +280,7 @@ Init <- function(sim) {
     stop("There is a missmatch in the growth curves of the userGcM3 and the gcMeta")
   }
 
-  # assuming gcMeta has now 5 columns, it needs 2 more: spatial_unit_id and ecozone. This
+  # gcMeta also needs spatial_unit_id and ecozone. This
   # will be used in the convertM3biom() fnct to link to the right ecozone
   # and it only needs the gc we are using in this sim.
   gcThisSim <- unique(as.data.table(sim$spatialDT)[,.(gcids, spatial_unit_id, ecozones)])
@@ -279,6 +289,7 @@ Init <- function(sim) {
   gcMeta <- merge(gcMeta, gcThisSim)
 
   sim$gcMetaAllCols <- gcMeta
+  # END Reading in user provided meta data for growth curves -----------------------------------------------
 
   # START processing curves from m3/ha to tonnes of C/ha then to annual increments
   # per above ground biomass pools -------------------------------------------
@@ -287,8 +298,7 @@ Init <- function(sim) {
 
   # Matching is 1st on species, then on gcids which gives us location (admin,
   # spatial unit and ecozone)
-  fullSpecies <- unique(gcMeta$species) ## RIA: change this to the canfi_sps or match??
-  ####cumPools <- NULL
+  fullSpecies <- unique(gcMeta$species)
 
   cumPools <- Cache(cumPoolsCreate, fullSpecies, gcMeta, userGcM3,
                     stable3, stable4, stable5, stable6, stable7, thisAdmin)
@@ -317,20 +327,13 @@ Init <- function(sim) {
 
   # 3. Plot the curves that are directly out of the Boudewyn-translation
   # Usually, these need to be, at a minimum, smoothed out.
-  if (!is.null(P(sim)$outputFigurePath) || !is.na(P(sim)$outputFigurePath)){
-    figPath <- file.path(outputPath(sim), "CBM_vol2biomass_figures")
-    dir.create(figPath, recursive = TRUE, showWarnings = FALSE)
-  }else{
-    figPath <- P(sim)$outputFigurePath
-    if (!file.exists(figPath)) stop("Output figure path not found: ", figPath)
-  }
 
   # plotting and save the plots of the raw-translation in the sim$ don't really
   # need this b/c the next use of m3ToBiomPlots fnct plots all 6 curves, 3
   # raw-translation and 3-smoothed curves resulting from the Chapman-Richards
   # parameter finding in the cumPoolsSmooth fnct. Leaving these lines here as
   # exploration tools.
-  # if (!is.na(P(sim)$.plotInitialTime))
+  ## TODO: look at how the plotting is done here
   sim$plotsRawCumulativeBiomass <- m3ToBiomPlots( inc = cumPoolsRaw,
                                          path = figPath,
                                          filenameBase = "rawCumBiomass_")
