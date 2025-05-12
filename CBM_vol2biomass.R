@@ -259,7 +259,6 @@ Init <- function(sim) {
   setkey(gcMeta, gcids)
   gcMeta <- merge(gcMeta, gcThisSim)
 
-  sim$gcMetaAllCols <- gcMeta
   # END Reading in user provided meta data for growth curves -----------------------------------------------
 
   # START processing curves from m3/ha to tonnes of C/ha then to annual increments
@@ -273,6 +272,7 @@ Init <- function(sim) {
 
   cumPools <- Cache(cumPoolsCreate, fullSpecies, gcMeta, userGcM3,
                     stable3, stable4, stable5, stable6, stable7, thisAdmin)
+  colNames <- c("totMerch", "fol", "other")
   cbmAboveGroundPoolColNames <- "totMerch|fol|other"
   colNames <- grep(cbmAboveGroundPoolColNames, colnames(cumPools), value = TRUE)
 
@@ -280,8 +280,6 @@ Init <- function(sim) {
   ### if not, we need to extrapolate to make them annual
   minAgeId <- cumPools[,.(minAge = max(0, min(age) - 1)), by = "gcids"]
   fill0s <- minAgeId[,.(age = seq(from = 0, to = minAge, by = 1)), by = "gcids"]
-  # might not need this
-  length0s <- fill0s[,.(toMinAge = length(age)), by = "gcids"]
   # these are going to be 0s
   carbonVars <- data.table(gcids = unique(fill0s$gcids),
                            totMerch = 0,
@@ -296,20 +294,9 @@ Init <- function(sim) {
   set(cumPoolsRaw, NULL, "age", as.numeric(cumPoolsRaw$age))
   setorderv(cumPoolsRaw, c("gcids", "age"))
 
-  # 3. Plot the curves that are directly out of the Boudewyn-translation
-  # Usually, these need to be, at a minimum, smoothed out.
+  # 3. Fixing of non-smooth curves
 
-  # plotting and save the plots of the raw-translation in the sim$ don't really
-  # need this b/c the next use of m3ToBiomPlots fnct plots all 6 curves, 3
-  # raw-translation and 3-smoothed curves resulting from the Chapman-Richards
-  # parameter finding in the cumPoolsSmooth fnct. Leaving these lines here as
-  # exploration tools.
-  ## TODO: look at how the plotting is done here
-  sim$plotsRawCumulativeBiomass <- m3ToBiomPlots( inc = cumPoolsRaw,
-                                         path = figPath,
-                                         filenameBase = "rawCumBiomass_")
-
-  # Fixing of non-smooth curves
+  # 3.1 SK-specific fixes with birch curves:
   ## SK is a great example of poor performance of the Boudewyn et al 2007
   ## models. The "translation" does not work well with white birch (probably
   ## because there was not enough data in SK in the model-building data). So,
@@ -318,12 +305,10 @@ Init <- function(sim) {
   ## m3ToBiomPlots commented above). Here, the user, decided that after all the
   ## catches in place in the cumSmoothPools failed, a hard fix was needed. The
   ## fol and other columns in gcids 37 and 58, will be replace by the fol and
-  ## other of gcids 55.
+  ## other of gcids 55. The user will have to decide which curves to replace and with what.
 ##TODO replace this hardcoding
   birchGcIds <- c("37", "58")
   birchColsChg <- c("fol", "other")
-  ##TODO this (which curve to replace the wonky ones with) will have to be
-  ##decided by the user after they look at all the curves.
   if(any(cumPoolsRaw$gcids == 37 | cumPoolsRaw$gcids == 58)) {
   if (any(cumPoolsRaw$gcids == 55)) {
     cumPoolsRaw[gcids %in% birchGcIds, fol := rep(cumPoolsRaw[gcids == 55, fol],length(birchGcIds))]
@@ -348,9 +333,7 @@ Init <- function(sim) {
                                   ) |> Cache()
   #Note: this will produce a warning if one of the curve smoothing efforts doesn't converge
 
-
-  # a[, totMerch := totMerchNew]
-  #if (!is.na(P(sim)$.plotInitialTime)) {
+##TODO: look at and change this plotting function
     figs <- m3ToBiomPlots(inc = cumPoolsClean,
                   path = figPath,
                   filenameBase = "cumPools_smoothed_postChapmanRichards"
@@ -366,18 +349,18 @@ Init <- function(sim) {
   cumPoolsClean[, (incCols) := lapply(.SD, function(x) c(NA, diff(x))), .SDcols = colNames,
                 by = eval("gcids")]
   colsToUse33 <- c("age", "gcids", incCols)
-#  if (!is.na(P(sim)$.plotInitialTime)) {
-    rawIncPlots <- m3ToBiomPlots(inc = cumPoolsClean[, ..colsToUse33],
+  rawIncPlots <- m3ToBiomPlots(inc = cumPoolsClean[, ..colsToUse33],
                          path = figPath,
                          title = "Smoothed increments merch fol other by gc id",
                          filenameBase = "Increments") |> Cache()
-#  }
+
   message(crayon::red("User: please inspect figures of the raw and smoothed translation of your growth curves in: ",
                       figPath))
+
   sim$cumPoolsClean <- cumPoolsClean
   colsToUseForestType <- c("sw_hw", "gcids")
   forestType <- unique(gcMeta[, ..colsToUseForestType])
-  #       #FYI:
+
   #       # cbmTables$forest_type
   #       # id           name
   #       # 1  1       Softwood
@@ -388,11 +371,6 @@ Init <- function(sim) {
   setkeyv(forestType, "gcids")
   cumPoolsClean <- merge(cumPoolsClean, forestType, by = "gcids",
                                      all.x = TRUE, all.y = FALSE)
-
-  ## libcbm functions are expecting a full time step increments of carbon (NOT
-  ## halved). For the default CBM3-like operations that cbm_exn (libcbm) uses
-  ## the increments you provide are halved internally by this code:
-  ## https://github.com/cat-cfs/libcbm_py/blob/main/libcbm/model/cbm_exn/cbm_exn_annual_process_dynamics.py#L22
 
   outCols <- c("id", "ecozone", "totMerch", "fol", "other")
   cumPoolsClean[, (outCols) := NULL]
@@ -413,8 +391,8 @@ Init <- function(sim) {
     if (length(unique(increments[, max(age), by = "sw_hw"]$V1)) != 1)
       stop("All ages should end at the same age for each curveID")
   }
-  ## replace increments that are NA with 0s
 
+  ## replace increments that are NA with 0s
   increments[is.na(increments), ] <- 0
   sim$growth_increments <- increments
 
