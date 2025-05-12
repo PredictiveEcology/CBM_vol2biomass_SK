@@ -51,8 +51,6 @@ defineModule(sim, list(
     )
   ),
   inputObjects = bindrows(
-    # expectsInput("objectName", "objectClass", "input object description", sourceURL, ...),
-    # this are variables in inputed data.tables:SpatialUnitID, EcoBoundaryID, juris_id, ecozone, jur, eco, name, gcids, plotsRawCumulativeBiomass, checkInc
     expectsInput(
       objectName = "userGcM3URL", objectClass = "character",
       desc = "URL for userGcM3"),
@@ -133,7 +131,6 @@ defineModule(sim, list(
       desc = "URL for gcMeta")
   ),
   outputObjects = bindrows(
-    # createsOutput("objectName", "objectClass", "output object description", ...),
     createsOutput(
       objectName = "volCurves", objectClass = "plot",
       desc = "Plot of all the growth curve provided by the user"),
@@ -151,9 +148,6 @@ defineModule(sim, list(
   )
 ))
 
-## event types
-#   - type `init` is required for initialization
-
 doEvent.CBM_vol2biomass <- function(sim, eventTime, eventType) {
   switch(
     eventType,
@@ -166,8 +160,6 @@ doEvent.CBM_vol2biomass <- function(sim, eventTime, eventType) {
   )
   return(invisible(sim))
 }
-
-## event functions
 
 Init <- function(sim) {
   # user provides userGcM3: incoming cumulative m3/ha
@@ -232,7 +224,7 @@ Init <- function(sim) {
   # This could be a complete data frame with the same columns as gcMetaEg.csv OR is could be only curve
   # id and species.
 
-  ## Check that all required columns are available:
+  ## Check that all required columns are available, and if not, add them:
   ## "gcids" "species" "canfi_species" "genus" "sw_hw"
   if (!all(c(sim$curveID, "species") %in% names(sim$gcMeta))) stop(
     "gcMeta is missing column(s): ",
@@ -432,49 +424,7 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
-### template for save events
-Save <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  sim <- saveFiles(sim)
-
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
-}
-
-### template for plot events
-plotFun <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  # Plot(sim$object)
-
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
-}
-
 .inputObjects <- function(sim) {
-
-  # cacheTags <- c(currentModule(sim), "function:.inputObjects") ## uncomment this if Cache is being used
-  # dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
-  # message(currentModule(sim), ": using dataPath '", dPath, "'.")
-
-  if (!suppliedElsewhere("gcids", sim)) {
-    ## this is where the pixelGroups and their spu eco etc.
-    message("No spatial information was provided for the growth curves.
-            The default values (SK simulations) will be used to limit the number of growth curves used.")
-    sim$gcids <- gcidsSK
-  }
-
-  if (!suppliedElsewhere("ecozones", sim)) {
-    message("No spatial information was provided for the growth curves.
-            The default values (SK simulations) will be used to determine which ecozones these curves are in.")
-    sim$ecozones <- ecozonesSK
-  }
-  if (!suppliedElsewhere("spatialUnits", sim)) {
-    message("No spatial information was provided for the growth curves.
-            The default values (SK simulations) will be used to determine which CBM-spatial units these curves are in.")
-    sim$spatialUnits <- spatialUnitsSK
-  }
 
   # Growth and yield
   ## TODO add a data manipulation to adjust if the m3 are not given on a yearly basis.
