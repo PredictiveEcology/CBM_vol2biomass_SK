@@ -179,15 +179,8 @@ Init <- function(sim) {
       stop("There are still yield curves that are not annually resolved")
   }
 
-  # Creates or sets the vol2biomass outputs subfolder (inside the general outputs folder)
-  if (!is.null(P(sim)$outputFigurePath) || !is.na(P(sim)$outputFigurePath)){
-    figPath <- file.path(outputPath(sim), "CBM_vol2biomass_figures")
-    dir.create(figPath, recursive = TRUE, showWarnings = FALSE)
-  }else{
-    figPath <- P(sim)$outputFigurePath
-    if (!file.exists(figPath)) stop("Output figure path not found: ", figPath)
-  }
-
+  # Creates/sets the vol2biomass outputs subfolder (inside the general outputs folder)
+  figPath <- file.path(outputPath(sim), "CBM_vol2biomass_figures")
   sim$volCurves <- ggplot(data = sim$userGcM3, aes(x = Age, y = MerchVolume, group = gcids, colour = factor(gcids))) +
     geom_line() + theme_bw()
   SpaDES.core::Plots(sim$volCurves,
@@ -286,7 +279,7 @@ Init <- function(sim) {
   setorderv(cumPoolsRaw, c("gcids", "age"))
 
   # 3. Fixing of non-smooth curves
-message(crayon::red("User: please inspect figures of the raw and smoothed translation of your growth curves in: ",
+  message(crayon::red("User: please inspect figures of the raw and smoothed translation of your growth curves in: ",
                     figPath))
   # 3.1 SK-specific fixes with birch curves:
   ## SK is a great example of poor performance of the Boudewyn et al 2007
@@ -325,10 +318,15 @@ message(crayon::red("User: please inspect figures of the raw and smoothed transl
   #Note: this will produce a warning if one of the curve smoothing efforts doesn't converge
 
 ##TODO: look at and change this plotting function
-    figs <- m3ToBiomPlots(inc = cumPoolsClean,
+  cumPoolsSmoothPlot <- m3ToBiomPlots(inc = cumPoolsClean,
                   path = figPath,
                   filenameBase = "cumPools_smoothed_postChapmanRichards"
                   ) |> Cache()
+  SpaDES.core::Plots(cumPoolsSmoothPlot,
+                     filename = "cumPools_smoothed_postChapmanRichards",
+                     path = figPath,
+                     ggsaveArgs = list(width = 7, height = 5, units = "in", dpi = 300),
+                     types = "png")
 
   ## keeping the new curves - at this point they are still cumulative
   colNames <- c("totMerch", "fol", "other")
