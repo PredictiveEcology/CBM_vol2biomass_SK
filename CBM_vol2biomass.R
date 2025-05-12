@@ -135,9 +135,6 @@ defineModule(sim, list(
       objectName = "volCurves", objectClass = "plot",
       desc = "Plot of all the growth curve provided by the user"),
     createsOutput(
-      objectName = "gcMetaAllCols", objectClass = "data.frame",
-      desc = "`gcMeta` as above plus ecozones"),
-    createsOutput(
       objectName = "cumPoolsClean", objectClass = "data.table",
       desc = "Tonnes of carbon/ha both cumnulative and increments,
       for each growth curve id (in this data.table id and gcids are
@@ -251,9 +248,8 @@ Init <- function(sim) {
     stop("There is a missmatch in the growth curves of the userGcM3 and the gcMeta")
   }
 
-  # gcMeta also needs spatial_unit_id and ecozone. This
-  # will be used in the convertM3biom() fnct to link to the right ecozone
-  # and it only needs the gc we are using in this sim.
+  # gcMeta also needs spatial_unit_id and ecozone.
+  # Here we link the correct ecozones and subset to the gc used in this sim
   gcThisSim <- unique(as.data.table(sim$spatialDT)[,.(gcids, spatial_unit_id, ecozones)])
   setkey(gcThisSim, gcids)
   setkey(gcMeta, gcids)
@@ -272,12 +268,9 @@ Init <- function(sim) {
 
   cumPools <- Cache(cumPoolsCreate, fullSpecies, gcMeta, userGcM3,
                     stable3, stable4, stable5, stable6, stable7, thisAdmin)
-  colNames <- c("totMerch", "fol", "other")
-  cbmAboveGroundPoolColNames <- "totMerch|fol|other"
-  colNames <- grep(cbmAboveGroundPoolColNames, colnames(cumPools), value = TRUE)
 
-  # 2. MAKE SURE THE PROVIDED CURVES ARE ANNUAL
-  ### if not, we need to extrapolate to make them annual
+  # 2. Make sure the provided curves are annual
+  ## if not, we need to extrapolate to make them annual
   minAgeId <- cumPools[,.(minAge = max(0, min(age) - 1)), by = "gcids"]
   fill0s <- minAgeId[,.(age = seq(from = 0, to = minAge, by = 1)), by = "gcids"]
   # these are going to be 0s
@@ -285,9 +278,7 @@ Init <- function(sim) {
                            totMerch = 0,
                            fol = 0,
                            other = 0 )
-
   fiveOf7cols <- fill0s[carbonVars, on = "gcids"]
-
   otherVars <- cumPools[,.(id = unique(id), ecozone = unique(ecozone)), by = "gcids"]
   add0s <- fiveOf7cols[otherVars, on = "gcids"]
   cumPoolsRaw <- rbindlist(list(cumPools,add0s), use.names = TRUE)
@@ -305,8 +296,8 @@ Init <- function(sim) {
   ## m3ToBiomPlots commented above). Here, the user, decided that after all the
   ## catches in place in the cumSmoothPools failed, a hard fix was needed. The
   ## fol and other columns in gcids 37 and 58, will be replace by the fol and
-  ## other of gcids 55. The user will have to decide which curves to replace and with what.
-##TODO replace this hardcoding
+  ## other of gcids 55.
+  ## The user will have to decide which curves to replace and with what in their own study areas.
   birchGcIds <- c("37", "58")
   birchColsChg <- c("fol", "other")
   if(any(cumPoolsRaw$gcids == 37 | cumPoolsRaw$gcids == 58)) {
@@ -340,8 +331,9 @@ Init <- function(sim) {
                   ) |> Cache()
 
   ## keeping the new curves - at this point they are still cumulative
+  colNames <- c("totMerch", "fol", "other")
   set(cumPoolsClean, NULL, colNames, NULL)
-  colNamesNew <- grep(cbmAboveGroundPoolColNames, colnames(cumPoolsClean), value = TRUE)
+  colNamesNew <- grep("totMerch|fol|other", colnames(cumPoolsClean), value = TRUE)
   setnames(cumPoolsClean, old = colNamesNew, new = colNames)
 
   # 4. Calculating Increments
@@ -358,6 +350,8 @@ Init <- function(sim) {
                       figPath))
 
   sim$cumPoolsClean <- cumPoolsClean
+
+  # 4. add sw/hw flag
   colsToUseForestType <- c("sw_hw", "gcids")
   forestType <- unique(gcMeta[, ..colsToUseForestType])
 
@@ -372,6 +366,7 @@ Init <- function(sim) {
   cumPoolsClean <- merge(cumPoolsClean, forestType, by = "gcids",
                                      all.x = TRUE, all.y = FALSE)
 
+  # 5. finalize sim$growth_increments table
   outCols <- c("id", "ecozone", "totMerch", "fol", "other")
   cumPoolsClean[, (outCols) := NULL]
   keepCols <- c("gcids", "age", "merch_inc", "foliage_inc", "other_inc", "sw_hw")
