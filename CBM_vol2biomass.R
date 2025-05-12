@@ -159,17 +159,17 @@ doEvent.CBM_vol2biomass <- function(sim, eventTime, eventType) {
 }
 
 Init <- function(sim) {
-  # user provides userGcM3: incoming cumulative m3/ha
-
-  ##TODO have to make this more generic. Right now names of columns are fixed.
+  ## user provides userGcM3: incoming cumulative m3/ha.
+  ## table needs 3 columns: gcids, Age, MerchVolume
+  # Here we check that ages increment by 1 each timestep,
+  # if it does not, it will attempt to resample the table to make it so.
   ageJumps <- sim$userGcM3[, list(jumps = unique(diff(as.numeric(Age)))), by = "gcids"]
   idsWithJumpGT1 <- ageJumps[jumps > 1]$gcids
-  if (length(idsWithJumpGT1)) {
+  if (length(idsWithJumpGT1) > 0) {
     missingAboveMin <- sim$userGcM3[, approx(Age, MerchVolume, xout = setdiff(seq(0, max(Age)), Age)),
                                     by = "gcids"]
     setnames(missingAboveMin, c("x", "y"), c("Age", "MerchVolume"))
-    missingAboveMin <- na.omit(missingAboveMin)
-    sim$userGcM3 <- rbindlist(list(sim$userGcM3, missingAboveMin))
+    sim$userGcM3 <- rbindlist(list(sim$userGcM3, na.omit(missingAboveMin)))
     setorderv(sim$userGcM3, c("gcids", "Age"))
 
     # Assertion
@@ -209,11 +209,11 @@ Init <- function(sim) {
   # subsetting Boudewyn tables to the ecozones/admin boundaries of the study area.
   # Some ecozones/boundaries are not in these tables, in these cases, the function replaces them in
   # thisAdmin to the closest equivalent present in the Boudewyn tables.
-  stable3 <- boudewynSubsetTables(sim$table3, thisAdmin, eco)
-  stable4 <- boudewynSubsetTables(sim$table4, thisAdmin, eco)
-  stable5 <- boudewynSubsetTables(sim$table5, thisAdmin, eco)
-  stable6 <- boudewynSubsetTables(sim$table6, thisAdmin, eco)
-  stable7 <- boudewynSubsetTables(sim$table7, thisAdmin, eco)
+  stable3 <- boudewynSubsetTablesEco(sim$table3, thisAdmin, eco)
+  stable4 <- boudewynSubsetTablesEco(sim$table4, thisAdmin, eco)
+  stable5 <- boudewynSubsetTablesAdmin(sim$table5, thisAdmin, eco)
+  stable6 <- boudewynSubsetTablesEco(sim$table6, thisAdmin, eco)
+  stable7 <- boudewynSubsetTablesEco(sim$table7, thisAdmin, eco)
 
   # END reducing Biomass model parameter tables -----------------------------------------------
 
@@ -286,7 +286,8 @@ Init <- function(sim) {
   setorderv(cumPoolsRaw, c("gcids", "age"))
 
   # 3. Fixing of non-smooth curves
-
+message(crayon::red("User: please inspect figures of the raw and smoothed translation of your growth curves in: ",
+                    figPath))
   # 3.1 SK-specific fixes with birch curves:
   ## SK is a great example of poor performance of the Boudewyn et al 2007
   ## models. The "translation" does not work well with white birch (probably
@@ -319,7 +320,6 @@ Init <- function(sim) {
     cumPoolsRaw[gcids %in% birchGcIds,other := gc55raw[, other]]
   }
   }
-
   cumPoolsClean <- cumPoolsSmooth(cumPoolsRaw
                                   ) |> Cache()
   #Note: this will produce a warning if one of the curve smoothing efforts doesn't converge
@@ -345,9 +345,6 @@ Init <- function(sim) {
                          path = figPath,
                          title = "Smoothed increments merch fol other by gc id",
                          filenameBase = "Increments") |> Cache()
-
-  message(crayon::red("User: please inspect figures of the raw and smoothed translation of your growth curves in: ",
-                      figPath))
 
   sim$cumPoolsClean <- cumPoolsClean
 
