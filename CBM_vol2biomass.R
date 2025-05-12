@@ -209,11 +209,11 @@ Init <- function(sim) {
   # subsetting Boudewyn tables to the ecozones/admin boundaries of the study area.
   # Some ecozones/boundaries are not in these tables, in these cases, the function replaces them in
   # thisAdmin to the closest equivalent present in the Boudewyn tables.
-  stable3 <- boudewynSubsetTablesEco(sim$table3, thisAdmin, eco)
-  stable4 <- boudewynSubsetTablesEco(sim$table4, thisAdmin, eco)
-  stable5 <- boudewynSubsetTablesAdmin(sim$table5, thisAdmin, eco)
-  stable6 <- boudewynSubsetTablesEco(sim$table6, thisAdmin, eco)
-  stable7 <- boudewynSubsetTablesEco(sim$table7, thisAdmin, eco)
+  stable3 <- boudewynSubsetTables(sim$table3, thisAdmin, eco)
+  stable4 <- boudewynSubsetTables(sim$table4, thisAdmin, eco)
+  stable5 <- boudewynSubsetTables(sim$table5, thisAdmin, eco)
+  stable6 <- boudewynSubsetTables(sim$table6, thisAdmin, eco)
+  stable7 <- boudewynSubsetTables(sim$table7, thisAdmin, eco)
 
   # END reducing Biomass model parameter tables -----------------------------------------------
 
