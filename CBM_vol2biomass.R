@@ -135,8 +135,8 @@ defineModule(sim, list(
       objectName = "volCurves", objectClass = "plot",
       desc = "Plot of all the growth curve provided by the user"),
     createsOutput(
-      objectName = "cumPoolsClean", objectClass = "data.table",
-      desc = "Tonnes of carbon/ha both cumnulative and increments,
+      objectName = "cPoolsClean", objectClass = "data.table",
+      desc = "Tonnes of carbon/ha both cumulative and increments,
       for each growth curve id (in this data.table id and gcids are
       the same), by age and ecozone"),
     createsOutput(
@@ -253,19 +253,19 @@ Init <- function(sim) {
   # START processing curves from m3/ha to tonnes of C/ha then to annual increments
   # per above ground biomass pools -------------------------------------------
 
-  # 1. Calculate the translation (result is cumPools or "cumulative AGcarbon pools")
+  # 1. Calculate the translation (result is cPools or "cumulative AGcarbon pools")
 
   # Matching is 1st on species, then on gcids which gives us location (admin,
   # spatial unit and ecozone)
   fullSpecies <- unique(gcMeta$species)
 
-  cumPools <- cumPoolsCreate(fullSpecies, gcMeta, userGcM3,
+  cPools <- cumPoolsCreate(fullSpecies, gcMeta, userGcM3,
                              stable3, stable4, stable5, stable6, stable7, thisAdmin
                              ) |> Cache()
 
   # 2. Make sure the provided curves are annual
   ## if not, we need to extrapolate to make them annual
-  minAgeId <- cumPools[,.(minAge = max(0, min(age) - 1)), by = "gcids"]
+  minAgeId <- cPools[,.(minAge = max(0, min(age) - 1)), by = "gcids"]
   fill0s <- minAgeId[,.(age = seq(from = 0, to = minAge, by = 1)), by = "gcids"]
   # these are going to be 0s
   carbonVars <- data.table(gcids = unique(fill0s$gcids),
@@ -273,11 +273,11 @@ Init <- function(sim) {
                            fol = 0,
                            other = 0 )
   fiveOf7cols <- fill0s[carbonVars, on = "gcids"]
-  otherVars <- cumPools[,.(id = unique(id), ecozone = unique(ecozone)), by = "gcids"]
+  otherVars <- cPools[,.(id = unique(id), ecozone = unique(ecozone)), by = "gcids"]
   add0s <- fiveOf7cols[otherVars, on = "gcids"]
-  cumPoolsRaw <- rbindlist(list(cumPools,add0s), use.names = TRUE)
-  set(cumPoolsRaw, NULL, "age", as.numeric(cumPoolsRaw$age))
-  setorderv(cumPoolsRaw, c("gcids", "age"))
+  cPoolsRaw <- rbindlist(list(cPools,add0s), use.names = TRUE)
+  set(cPoolsRaw, NULL, "age", as.numeric(cPoolsRaw$age))
+  setorderv(cPoolsRaw, c("gcids", "age"))
 
   # 3. Fixing of non-smooth curves
   message(crayon::red("User: please inspect figures of the raw and smoothed translation of your growth curves in: ",
@@ -289,16 +289,16 @@ Init <- function(sim) {
   ## the resulting curves are for fol and other are nonsensical. This can be
   ## seen by visually inspecting the curves going into the translations (run
   ## m3ToBiomPlots commented above). Here, the user, decided that after all the
-  ## catches in place in the cumSmoothPools failed, a hard fix was needed. The
+  ## catches in place in the cSmoothPools failed, a hard fix was needed. The
   ## fol and other columns in gcids 37 and 58, will be replace by the fol and
   ## other of gcids 55.
   ## The user will have to decide which curves to replace and with what in their own study areas.
   birchGcIds <- c("37", "58")
   birchColsChg <- c("fol", "other")
-  if(any(cumPoolsRaw$gcids == 37 | cumPoolsRaw$gcids == 58)) {
-  if (any(cumPoolsRaw$gcids == 55)) {
-    cumPoolsRaw[gcids %in% birchGcIds, fol := rep(cumPoolsRaw[gcids == 55, fol],length(birchGcIds))]
-    cumPoolsRaw[gcids %in% birchGcIds, other := rep(cumPoolsRaw[gcids == 55, other],length(birchGcIds))]
+  if(any(cPoolsRaw$gcids == 37 | cPoolsRaw$gcids == 58)) {
+  if (any(cPoolsRaw$gcids == 55)) {
+    cPoolsRaw[gcids %in% birchGcIds, fol := rep(cPoolsRaw[gcids == 55, fol],length(birchGcIds))]
+    cPoolsRaw[gcids %in% birchGcIds, other := rep(cPoolsRaw[gcids == 55, other],length(birchGcIds))]
   }else{
     meta55 <- sim$gcMeta[gcids == 55,]
     setnames(meta55, "gcids", "gcids")
@@ -310,42 +310,42 @@ Init <- function(sim) {
     gc550s <- data.frame(id = 55, age = 0, totMerch = 0, fol = 0, other = 0, ecozone = 9, gcids = 55)
     gc55raw <- rbind(gc55, gc550s)
     setorderv(gc55raw, c("gcids", "age"))
-    cumPoolsRaw[gcids %in% birchGcIds,fol := gc55raw[, fol]]
-    cumPoolsRaw[gcids %in% birchGcIds,other := gc55raw[, other]]
+    cPoolsRaw[gcids %in% birchGcIds,fol := gc55raw[, fol]]
+    cPoolsRaw[gcids %in% birchGcIds,other := gc55raw[, other]]
   }
   }
-  cumPoolsClean <- cumPoolsSmooth(cumPoolsRaw
+  cPoolsClean <- cumPoolsSmooth(cPoolsRaw
                                   ) |> Cache()
   #Note: this will produce a warning if one of the curve smoothing efforts doesn't converge
 
 ##TODO: look at and change this plotting function
-  cumPoolsSmoothPlot <- m3ToBiomPlots(inc = cumPoolsClean,
-                  path = figPath,
-                  filenameBase = "cumPools_smoothed_postChapmanRichards"
+  cPoolsSmoothPlot <- m3ToBiomPlots(inc = cPoolsClean,
+                                    path = figPath,
+                                    filenameBase = "cPools_smoothed_postChapmanRichards"
                   ) |> Cache()
-  SpaDES.core::Plots(cumPoolsSmoothPlot,
-                     filename = "cumPools_smoothed_postChapmanRichards",
+  SpaDES.core::Plots(cPoolsSmoothPlot,
+                     filename = "cPools_smoothed_postChapmanRichards",
                      path = figPath,
                      ggsaveArgs = list(width = 7, height = 5, units = "in", dpi = 300),
                      types = "png")
 
   ## keeping the new curves - at this point they are still cumulative
   colNames <- c("totMerch", "fol", "other")
-  set(cumPoolsClean, NULL, colNames, NULL)
-  colNamesNew <- grep("totMerch|fol|other", colnames(cumPoolsClean), value = TRUE)
-  setnames(cumPoolsClean, old = colNamesNew, new = colNames)
+  set(cPoolsClean, NULL, colNames, NULL)
+  colNamesNew <- grep("totMerch|fol|other", colnames(cPoolsClean), value = TRUE)
+  setnames(cPoolsClean, old = colNamesNew, new = colNames)
 
   # 4. Calculating Increments
   incCols <- c("incMerch", "incFol", "incOther")
-  cumPoolsClean[, (incCols) := lapply(.SD, function(x) c(NA, diff(x))), .SDcols = colNames,
+  cPoolsClean[, (incCols) := lapply(.SD, function(x) c(NA, diff(x))), .SDcols = colNames,
                 by = eval("gcids")]
   colsToUse33 <- c("age", "gcids", incCols)
-  rawIncPlots <- m3ToBiomPlots(inc = cumPoolsClean[, ..colsToUse33],
+  rawIncPlots <- m3ToBiomPlots(inc = cPoolsClean[, ..colsToUse33],
                          path = figPath,
                          title = "Smoothed increments merch fol other by gc id",
                          filenameBase = "Increments") |> Cache()
 
-  sim$cumPoolsClean <- cumPoolsClean
+  sim$cPoolsClean <- cPoolsClean
 
   # 4. add sw/hw flag
   colsToUseForestType <- c("sw_hw", "gcids")
@@ -359,17 +359,17 @@ Init <- function(sim) {
   #       # 4  9 Not Applicable
 
   setkeyv(forestType, "gcids")
-  cumPoolsClean <- merge(cumPoolsClean, forestType, by = "gcids",
+  cPoolsClean <- merge(cPoolsClean, forestType, by = "gcids",
                                      all.x = TRUE, all.y = FALSE)
 
   # 5. finalize sim$growth_increments table
   outCols <- c("id", "ecozone", "totMerch", "fol", "other")
-  cumPoolsClean[, (outCols) := NULL]
+  cPoolsClean[, (outCols) := NULL]
   keepCols <- c("gcids", "age", "merch_inc", "foliage_inc", "other_inc", "sw_hw")
   incCols <- c("merch_inc", "foliage_inc", "other_inc")
-  setnames(cumPoolsClean,names(cumPoolsClean),
+  setnames(cPoolsClean,names(cPoolsClean),
            keepCols)
-  increments <- cumPoolsClean[, (incCols) := list(
+  increments <- cPoolsClean[, (incCols) := list(
     merch_inc, foliage_inc, other_inc
   )]
   setorderv(increments, c("gcids", "age"))
