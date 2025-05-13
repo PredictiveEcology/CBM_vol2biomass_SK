@@ -259,8 +259,9 @@ Init <- function(sim) {
   # spatial unit and ecozone)
   fullSpecies <- unique(gcMeta$species)
 
-  cumPools <- Cache(cumPoolsCreate, fullSpecies, gcMeta, userGcM3,
-                    stable3, stable4, stable5, stable6, stable7, thisAdmin)
+  cumPools <- cumPoolsCreate(fullSpecies, gcMeta, userGcM3,
+                             stable3, stable4, stable5, stable6, stable7, thisAdmin
+                             ) |> Cache()
 
   # 2. Make sure the provided curves are annual
   ## if not, we need to extrapolate to make them annual
