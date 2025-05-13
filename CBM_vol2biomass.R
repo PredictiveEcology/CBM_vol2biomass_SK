@@ -16,7 +16,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "CBM_vol2biomass.Rmd")),
   reqdPkgs = list(
-    "PredictiveEcology/CBMutils@development (>=2.0.2.0002)",
+    "PredictiveEcology/CBMutils@development (>=2.0.2.0003)",
     "ggforce", "ggplot2", "ggpubr", "googledrive", "mgcv", "quickPlot", "robustbase", "data.table"
   ),
   parameters = rbind(
@@ -318,16 +318,15 @@ Init <- function(sim) {
                                   ) |> Cache()
   #Note: this will produce a warning if one of the curve smoothing efforts doesn't converge
 
-##TODO: look at and change this plotting function
   cPoolsSmoothPlot <- m3ToBiomPlots(inc = cPoolsClean,
-                                    path = figPath,
-                                    filenameBase = "cPools_smoothed_postChapmanRichards"
-                  ) |> Cache()
-  SpaDES.core::Plots(cPoolsSmoothPlot,
-                     filename = "cPools_smoothed_postChapmanRichards",
+                                     ) |> Cache()
+  for (i in seq_along(cPoolsSmoothPlot)){
+  SpaDES.core::Plots(cPoolsSmoothPlot[[i]],
+                     filename = paste0("cPools_smoothed_postChapmanRichards_", i, ".png"),
                      path = figPath,
                      ggsaveArgs = list(width = 7, height = 5, units = "in", dpi = 300),
                      types = "png")
+  }
 
   ## keeping the new curves - at this point they are still cumulative
   colNames <- c("totMerch", "fol", "other")
