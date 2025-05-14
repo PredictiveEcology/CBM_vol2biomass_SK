@@ -17,7 +17,7 @@ defineModule(sim, list(
   documentation = deparse(list("README.txt", "CBM_vol2biomass.Rmd")),
   reqdPkgs = list(
     "PredictiveEcology/CBMutils@development (>=2.0.2.0003)",
-    "ggforce", "ggplot2", "ggpubr", "googledrive", "mgcv", "quickPlot", "robustbase", "data.table"
+    "ggforce", "ggplot2", "ggpubr", "googledrive", "mgcv", "quickPlot", "robustbase", "data.table", "patchwork"
   ),
   parameters = rbind(
     defineParameter(
@@ -316,10 +316,12 @@ Init <- function(sim) {
   }
   cPoolsClean <- cumPoolsSmooth(cPoolsRaw
                                   ) |> Cache()
-  #Note: this will produce a warning if one of the curve smoothing efforts doesn't converge
 
+  #Note: this will produce a warning if one of the curve smoothing efforts doesn't converge
+  # cPoolsCleanCopy <- copy(cPoolsClean)
+  browser()
   cPoolsSmoothPlot <- m3ToBiomPlots(inc = cPoolsClean,
-                                     ) |> Cache()
+                                    title = "Cumulative merch/fol/other by gcid")
   for (i in seq_along(cPoolsSmoothPlot)){
   SpaDES.core::Plots(cPoolsSmoothPlot[[i]],
                      filename = paste0("cPools_smoothed_postChapmanRichards_", i, ".png"),
@@ -340,9 +342,14 @@ Init <- function(sim) {
                 by = eval("gcids")]
   colsToUse33 <- c("age", "gcids", incCols)
   rawIncPlots <- m3ToBiomPlots(inc = cPoolsClean[, ..colsToUse33],
-                         path = figPath,
-                         title = "Smoothed increments merch fol other by gc id",
-                         filenameBase = "Increments") |> Cache()
+                               title = "Increments")
+  for (i in seq_along(rawIncPlots)){
+  SpaDES.core::Plots(rawIncPlots[[i]],
+                     filename = paste0("increments_", i, ".png"),
+                     path = figPath,
+                     ggsaveArgs = list(width = 7, height = 5, units = "in", dpi = 300),
+                     types = "png")
+}
 
   sim$cPoolsClean <- cPoolsClean
 
