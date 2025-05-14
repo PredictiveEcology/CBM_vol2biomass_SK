@@ -318,14 +318,13 @@ Init <- function(sim) {
                                   ) |> Cache()
 
   #Note: this will produce a warning if one of the curve smoothing efforts doesn't converge
-  cPoolsCleanCopy <- copy(cPoolsClean)
   cPoolsSmoothPlot <- m3ToBiomPlots(inc = cPoolsClean,
                                     title = "Cumulative merch/fol/other by gcid")
   for (i in seq_along(cPoolsSmoothPlot)){
   SpaDES.core::Plots(cPoolsSmoothPlot[[i]],
                      filename = paste0("cPools_smoothed_postChapmanRichards_", i, ".png"),
                      path = figPath,
-                     ggsaveArgs = list(width = 7, height = 5, units = "in", dpi = 300),
+                     ggsaveArgs = list(width = 10, height = 5, units = "in", dpi = 300),
                      types = "png")
   }
 
@@ -346,7 +345,7 @@ Init <- function(sim) {
   SpaDES.core::Plots(rawIncPlots[[i]],
                      filename = paste0("increments_", i, ".png"),
                      path = figPath,
-                     ggsaveArgs = list(width = 7, height = 5, units = "in", dpi = 300),
+                     ggsaveArgs = list(width = 10, height = 5, units = "in", dpi = 300),
                      types = "png")
 }
 
