@@ -318,8 +318,7 @@ Init <- function(sim) {
                                   ) |> Cache()
 
   #Note: this will produce a warning if one of the curve smoothing efforts doesn't converge
-  # cPoolsCleanCopy <- copy(cPoolsClean)
-  browser()
+  cPoolsCleanCopy <- copy(cPoolsClean)
   cPoolsSmoothPlot <- m3ToBiomPlots(inc = cPoolsClean,
                                     title = "Cumulative merch/fol/other by gcid")
   for (i in seq_along(cPoolsSmoothPlot)){
