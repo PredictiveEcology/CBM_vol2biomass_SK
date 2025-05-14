@@ -176,7 +176,7 @@ The module automatically plots both the direct translation (no smoothing `totMer
 | Name              | Class      | Description |
 |-------------------|------------|-------------|
 | cumPoolsClean     | Data table | Tonnes of carbon/ha both cumulative and increments, for each growth curve id, by age and ecozone |
-| growth_increments | Data table | 1/2 growth increment matrix |
+| growth_increments | Data table | growth increment matrix |
 | gcMetaAllCols     | Data table | `gcMeta` with ecozones |
 | volCurves         | Plot |  Plots of all growth curves provided by the user |
 
