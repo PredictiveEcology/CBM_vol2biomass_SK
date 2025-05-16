@@ -46,17 +46,10 @@ test_that("Module runs with defaults", {
   expect_true(!is.null(simTest$volCurves))
   expect_true(inherits(simTest$volCurves, "ggplot"))
 
-
-  ## Check output 'gcMetaAllCols' ----
-
-  expect_true(!is.null(simTest$gcMetaAllCols))
-  expect_true(inherits(simTest$gcMetaAllCols, "data.frame"))
-
-
   ## Check output 'cumPoolsClean' ----
 
-  expect_true(!is.null(simTest$cumPoolsClean))
-  expect_true(inherits(simTest$cumPoolsClean, "data.table"))
+  expect_true(!is.null(simTest$cPoolsClean))
+  expect_true(inherits(simTest$cPoolsClean, "data.table"))
 
 
   ## Check output 'growth_increments' ----
