@@ -54,14 +54,30 @@ defineModule(sim, list(
   ),
   inputObjects = bindrows(
     expectsInput(
-      objectName = "userGcM3URL", objectClass = "character",
-      desc = "URL for userGcM3"),
+      objectName = "curveID", objectClass = "character",
+      desc = "Vector of column names that together, uniquely define growth curve id",
+      sourceURL = NA),
+    expectsInput(
+      objectName = "spatialDT", objectClass = "data.table",
+      desc = "the table containing one line per pixel",
+      sourceURL = NA),
+    expectsInput(
+      objectName = "gcMeta", objectClass = "data.frame",
+      desc = paste("Provides equivalent between provincial boundaries",
+                   "CBM-id for provincial boundaries and CBM-spatial unit ids"),
+      sourceURL = "https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ/view?usp=sharing"),
+    expectsInput(
+      objectName = "gcMetaURL", objectClass = "character",
+      desc = "URL for gcMeta"),
     expectsInput(
       objectName = "userGcM3", objectClass = "data.frame",
       desc = paste("User file containing:",
                    "`gcids`, `Age`, `MerchVolume`.",
                    "Default name `userGcM3`."),
       sourceURL = "https://drive.google.com/file/d/1u7o2BzPZ2Bo7hNcC8nEctNpDmp7ce84m"),
+    expectsInput(
+      objectName = "userGcM3URL", objectClass = "character",
+      desc = "URL for userGcM3"),
     expectsInput(
       objectName = "cbmAdmin", objectClass = "data.frame",
       desc = paste("Provides equivalent between provincial boundaries,",
@@ -103,24 +119,7 @@ defineModule(sim, list(
       sourceURL = "https://nfi.nfis.org/resources/biomass_models/appendix2_table7.csv"),
     expectsInput(
       objectName = "table7URL", objectClass = "character",
-      desc = "URL for table 7"),
-    expectsInput(
-      objectName = "spatialDT", objectClass = "data.table",
-      desc = "the table containing one line per pixel",
-      sourceURL = NA),
-    expectsInput(
-      objectName = "curveID", objectClass = "character",
-      desc = "Vector of column names that together, uniquely define growth curve id",
-      sourceURL = NA),
-    expectsInput(
-      objectName = "gcMeta", objectClass = "data.frame",
-      desc = paste("Provides equivalent between provincial boundaries",
-                   "CBM-id for provincial boundaries and CBM-spatial unit ids"),
-      sourceURL =
-        "https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ/view?usp=sharing"),
-    expectsInput(
-      objectName = "gcMetaURL", objectClass = "character",
-      desc = "URL for gcMeta")
+      desc = "URL for table 7")
   ),
   outputObjects = bindrows(
     createsOutput(
