@@ -151,6 +151,11 @@ doEvent.CBM_vol2biomass <- function(sim, eventTime, eventType) {
 
 Init <- function(sim) {
 
+  # Temporary assertions for curveID
+  ## TODO: allow multiple columns as curveID and not just the column "gcids"
+  if (length(sim$curveID) != 1) stop("curveID must be a single column until further notice")
+  if (sim$curveID != "gcids")   stop("curveID must be \"gcids\" until further notice")
+
   # Check input
   reqCols <- list(
     gcMeta   = c(sim$curveID, "species"),
