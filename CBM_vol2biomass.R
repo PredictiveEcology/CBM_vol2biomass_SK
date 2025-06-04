@@ -186,7 +186,7 @@ Init <- function(sim) {
 
   # Creates/sets the vol2biomass outputs subfolder (inside the general outputs folder)
   figPath <- file.path(outputPath(sim), "CBM_vol2biomass_figures")
-  sim$volCurves <- ggplot(data = sim$userGcM3, aes(x = Age, y = MerchVolume, group = gcids, colour = factor(gcids))) +
+  sim$volCurves <- ggplot(data = sim$userGcM3, aes(x = Age, y = MerchVolume, group = sim$curveID, colour = factor(sim$curveID))) +
     geom_line() + theme_bw()
   SpaDES.core::Plots(sim$volCurves,
                      filename = "volCurves",
