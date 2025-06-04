@@ -446,7 +446,7 @@ Init <- function(sim) {
                                  destinationPath = inputPath(sim),
                                  targetFile = "userGcM3.csv",
                                  fun = "data.table::fread")
-      names(sim$userGcM3) <- c("gcID", "Age", "MerchVolume")
+      data.table::setnames(sim$userGcM3, names(sim$userGcM3), c("gcids", "Age", "MerchVolume"))
 
     }
   }
