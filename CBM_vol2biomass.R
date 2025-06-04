@@ -392,6 +392,25 @@ Init <- function(sim) {
 
   # Growth and yield
   ## TODO add a data manipulation to adjust if the m3 are not given on a yearly basis.
+  if (!suppliedElsewhere("curveID", sim)) {
+    sim$curveID <- c("gcids")#, "ecozones")
+  }
+
+  if (!suppliedElsewhere("gcMeta", sim)) {
+    if (!suppliedElsewhere("gcMetaURL", sim)) {
+      sim$gcMetaURL <- extractURL("gcMeta")
+    }
+
+    sim$gcMeta <- prepInputs(url = sim$gcMetaURL,
+                             targetFile = "gcMetaEg.csv",
+                             destinationPath = inputPath(sim),
+                             fun = fread,
+                             purge = 7
+    )
+
+    sim$gcMeta[, sw_hw := data.table::fifelse(forest_type_id == 1, "sw", "hw")]
+  }
+
   if (suppliedElsewhere("userGcM3", sim) | suppliedElsewhere("userGcM3URL", sim)){
 
     if (suppliedElsewhere("userGcM3", sim)){
@@ -429,9 +448,17 @@ Init <- function(sim) {
 
   }
 
-
-  if (!suppliedElsewhere("curveID", sim)) {
-    sim$curveID <- c("gcids")#, "ecozones")
+  # cbmAdmin: this is needed to match species and parameters. Boudewyn et al 2007
+  # abbreviation and cbm spatial units and ecoBoudnary id is provided with the
+  # adminName to avoid confusion.
+  if (!suppliedElsewhere("cbmAdmin", sim)) {
+    if (!suppliedElsewhere("cbmAdminURL", sim)) {
+      sim$cbmAdminURL <- extractURL("cbmAdmin")
+    }
+    sim$cbmAdmin <- prepInputs(url = sim$cbmAdminURL,
+                               targetFile = "cbmAdmin.csv",
+                               destinationPath = inputPath(sim),
+                               fun = fread)
   }
 
   ## tables from Boudewyn -- all downloaded from the NFIS site.
@@ -481,35 +508,6 @@ Init <- function(sim) {
     sim$table7 <- prepInputs(url = sim$table7URL,
                              destinationPath = inputPath(sim),
                              fun = fread)
-      }
-
-
-  if (!suppliedElsewhere("gcMeta", sim)) {
-    if (!suppliedElsewhere("gcMetaURL", sim)) {
-      sim$gcMetaURL <- extractURL("gcMeta")
-    }
-
-        sim$gcMeta <- prepInputs(url = sim$gcMetaURL,
-                                 targetFile = "gcMetaEg.csv",
-                                 destinationPath = inputPath(sim),
-                                 fun = fread,
-                                 purge = 7
-                                 )
-
-        sim$gcMeta[, sw_hw := data.table::fifelse(forest_type_id == 1, "sw", "hw")]
-  }
-
-  # cbmAdmin: this is needed to match species and parameters. Boudewyn et al 2007
-  # abbreviation and cbm spatial units and ecoBoudnary id is provided with the
-  # adminName to avoid confusion.
-  if (!suppliedElsewhere("cbmAdmin", sim)) {
-    if (!suppliedElsewhere("cbmAdminURL", sim)) {
-      sim$cbmAdminURL <- extractURL("cbmAdmin")
-    }
-        sim$cbmAdmin <- prepInputs(url = sim$cbmAdminURL,
-                                   targetFile = "cbmAdmin.csv",
-                                   destinationPath = inputPath(sim),
-                                   fun = fread)
   }
 
 
