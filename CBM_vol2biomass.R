@@ -150,6 +150,20 @@ doEvent.CBM_vol2biomass <- function(sim, eventTime, eventType) {
 }
 
 Init <- function(sim) {
+
+  # Check input
+  reqCols <- list(
+    gcMeta   = c(sim$curveID, "species"),
+    userGcM3 = c(sim$curveID, "Age", "MerchVolume")
+  )
+  if (!all(reqCols$gcMeta %in% names(sim$gcMeta))) stop(
+    "gcMeta must have columns: ", paste(shQuote(reqCols$gcMeta), collapse = ", "))
+  if (!all(reqCols$userGcM3 %in% names(sim$userGcM3))) stop(
+    "userGcM3 must have columns: ", paste(shQuote(reqCols$userGcM3), collapse = ", "))
+
+  sim$gcMeta   <- data.table::as.data.table(sim$gcMeta)
+  sim$userGcM3 <- data.table::as.data.table(sim$userGcM3)
+
   ## user provides userGcM3: incoming cumulative m3/ha.
   ## table needs 3 columns: gcids, Age, MerchVolume
   # Here we check that ages increment by 1 each timestep,
@@ -411,41 +425,26 @@ Init <- function(sim) {
     sim$gcMeta[, sw_hw := data.table::fifelse(forest_type_id == 1, "sw", "hw")]
   }
 
-  if (suppliedElsewhere("userGcM3", sim) | suppliedElsewhere("userGcM3URL", sim)){
+  if (!suppliedElsewhere("userGcM3", sim)){
 
-    if (suppliedElsewhere("userGcM3", sim)){
-
-      if (!inherits(sim$userGcM3, "data.table")){
-
-        sim$userGcM3 <- tryCatch(
-          data.table::as.data.table(sim$userGcM3),
-          error = function(e) stop(
-            "'userGcM3' could not be converted to data.table: ", e$message, call. = FALSE))
-      }
-
-    }else if (suppliedElsewhere("userGcM3URL", sim)){
+    if (suppliedElsewhere("userGcM3URL", sim)){
 
       sim$userGcM3 <- prepInputs(url = sim$userGcM3URL,
                                  destinationPath = inputPath(sim),
                                  fun = "data.table::fread")
+
+    }else{
+
+      message("User has not supplied growth curves ('userGcM3' or 'userGcM3URL'). ",
+              "Defaults for Saskatchewan will be used.")
+
+      sim$userGcM3 <- prepInputs(url = extractURL("userGcM3"),
+                                 destinationPath = inputPath(sim),
+                                 targetFile = "userGcM3.csv",
+                                 fun = "data.table::fread")
+      names(sim$userGcM3) <- c("gcID", "Age", "MerchVolume")
+
     }
-
-    reqCols <- c("gcids", "Age", "MerchVolume")
-    if (!all(reqCols %in% names(sim$userGcM3))) stop(
-      "'userGcM3' must have the following columns: ",
-      paste(shQuote(reqCols), collapse = ", "))
-
-  }else{
-
-    message("User has not supplied growth curves ('userGcM3' or 'userGcM3URL'). ",
-            "Defaults for Saskatchewan will be used.")
-
-    sim$userGcM3 <- prepInputs(url = extractURL("userGcM3"),
-                               destinationPath = inputPath(sim),
-                               targetFile = "userGcM3.csv",
-                               fun = "data.table::fread")
-    names(sim$userGcM3) <- c("gcids", "Age", "MerchVolume")
-
   }
 
   # cbmAdmin: this is needed to match species and parameters. Boudewyn et al 2007
