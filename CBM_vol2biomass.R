@@ -63,11 +63,6 @@ defineModule(sim, list(
                    "Default name `userGcM3`."),
       sourceURL = "https://drive.google.com/file/d/1u7o2BzPZ2Bo7hNcC8nEctNpDmp7ce84m"),
     expectsInput(
-      objectName = "spatialUnits", objectClass = "data.table",
-      desc = paste("the table linking the spu id, with the `disturbance_matrix_id` and the events.",
-                   "The events are the possible raster values from the disturbance rasters of Wulder and White."),
-      sourceURL = NA),
-    expectsInput(
       objectName = "cbmAdmin", objectClass = "data.frame",
       desc = paste("Provides equivalent between provincial boundaries,",
                    "CBM-id for provincial boundaries and CBM-spatial unit ids"),
@@ -75,11 +70,6 @@ defineModule(sim, list(
     expectsInput(
       objectName = "cbmAdminURL", objectClass = "character",
       desc = "URL for cbmAdmin"),
-    expectsInput(
-      objectName = "ecozones", objectClass = "data.table",
-      desc = paste("Vector, one for each stand, indicating the numeric representation",
-                   "of the Canadian ecozones, as used in CBM-CFS3"),
-      sourceURL = NA),
     expectsInput(
       objectName = "table3", objectClass = "data.frame",
       desc = "Stem wood biomass model parameters for merchantable-sized trees from Boudewyn et al 2007",
