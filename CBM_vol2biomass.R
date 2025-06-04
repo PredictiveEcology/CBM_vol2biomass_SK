@@ -168,18 +168,18 @@ Init <- function(sim) {
   ## table needs 3 columns: gcids, Age, MerchVolume
   # Here we check that ages increment by 1 each timestep,
   # if it does not, it will attempt to resample the table to make it so.
-  ageJumps <- sim$userGcM3[, list(jumps = unique(diff(as.numeric(Age)))), by = "gcids"]
-  idsWithJumpGT1 <- ageJumps[jumps > 1]$gcids
+  ageJumps <- sim$userGcM3[, list(jumps = unique(diff(as.numeric(Age)))), by = eval(sim$curveID)]
+  idsWithJumpGT1 <- ageJumps[jumps > 1][[sim$curveID]]
   if (length(idsWithJumpGT1) > 0) {
     missingAboveMin <- sim$userGcM3[, approx(Age, MerchVolume, xout = setdiff(seq(0, max(Age)), Age)),
-                                    by = "gcids"]
+                                    by = eval(sim$curveID)]
     setnames(missingAboveMin, c("x", "y"), c("Age", "MerchVolume"))
     sim$userGcM3 <- rbindlist(list(sim$userGcM3, na.omit(missingAboveMin)))
-    setorderv(sim$userGcM3, c("gcids", "Age"))
+    setorderv(sim$userGcM3, c(sim$curveID, "Age"))
 
     # Assertion
-    ageJumps <- sim$userGcM3[, list(jumps = unique(diff(as.numeric(Age)))), by = "gcids"]
-    idsWithJumpGT1 <- ageJumps[jumps > 1]$gcids
+    ageJumps <- sim$userGcM3[, list(jumps = unique(diff(as.numeric(Age)))), by = eval(sim$curveID)]
+    idsWithJumpGT1 <- ageJumps[jumps > 1][[sim$curveID]]
     if (length(idsWithJumpGT1) > 0)
       stop("There are still yield curves that are not annually resolved")
   }
@@ -405,7 +405,6 @@ Init <- function(sim) {
 .inputObjects <- function(sim) {
 
   # Growth and yield
-  ## TODO add a data manipulation to adjust if the m3 are not given on a yearly basis.
   if (!suppliedElsewhere("curveID", sim)) {
     sim$curveID <- c("gcids")#, "ecozones")
   }
