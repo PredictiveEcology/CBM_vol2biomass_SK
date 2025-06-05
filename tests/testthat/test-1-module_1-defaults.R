@@ -23,10 +23,9 @@ test_that("Module runs with defaults", {
       outputPath  = file.path(projectPath, "outputs")
     ),
 
-    spatialDT = data.frame(
+    userGcSPU = data.frame(
       spatial_unit_id = 28,
-      ecozones        = 9,
-      gcids           = 1
+      gcID            = 1
     )
   )
 
@@ -41,21 +40,34 @@ test_that("Module runs with defaults", {
   expect_s4_class(simTest, "simList")
 
 
-  ## Check output 'volCurves' ----
+  ## Check outputs 'volCurves' ----
 
   expect_true(!is.null(simTest$volCurves))
   expect_true(inherits(simTest$volCurves, "ggplot"))
+
 
   ## Check output 'cumPoolsClean' ----
 
   expect_true(!is.null(simTest$cPoolsClean))
   expect_true(inherits(simTest$cPoolsClean, "data.table"))
 
+  expect_true("28_1" %in% simTest$cPoolsClean$gcids)
+
+
+  ## Check output 'gcMeta' ---
+
+  expect_true(!is.null(simTest$gcMeta))
+  expect_true(inherits(simTest$gcMeta, "data.table"))
+
+  expect_true("28_1" %in% simTest$gcMeta$gcids)
+
 
   ## Check output 'growth_increments' ----
 
   expect_true(!is.null(simTest$growth_increments))
   expect_true(inherits(simTest$growth_increments, "data.table"))
+
+  expect_true("28_1" %in% simTest$growth_increments$gcids)
 
 })
 
