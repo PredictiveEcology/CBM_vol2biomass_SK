@@ -25,7 +25,7 @@ test_that("Module runs with defaults", {
 
     userGcSPU = data.frame(
       spatial_unit_id = 28,
-      gcID            = 1
+      curveID         = 1
     )
   )
 

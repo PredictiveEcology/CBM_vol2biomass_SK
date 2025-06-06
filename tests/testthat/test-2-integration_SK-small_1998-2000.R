@@ -21,6 +21,7 @@ test_that("Multi module: SK-small 1998-2000", {
 
     SpaDES.project::setupProject(
 
+      times   = times,
 
       modules = c(
         paste0("PredictiveEcology/CBM_defaults@",    Sys.getenv("BRANCH_NAME")),
@@ -28,8 +29,6 @@ test_that("Multi module: SK-small 1998-2000", {
         "CBM_vol2biomass",
         paste0("PredictiveEcology/CBM_core@",        Sys.getenv("BRANCH_NAME"))
       ),
-
-      times   = times,
       paths   = list(
         projectPath = projectPath,
         modulePath  = spadesTestPaths$temp$modules,

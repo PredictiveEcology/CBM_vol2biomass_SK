@@ -182,7 +182,7 @@ Init <- function(sim) {
   ## SK: always include gc ID 55
   sim$userGcSPU <- unique(data.table::rbindlist(list(
     sim$userGcSPU,
-    data.frame(spatial_unit_id = 28, gcID = 55)
+    data.frame(spatial_unit_id = 28, curveID = 55)
   ), fill = TRUE))
 
   ## user provides userGcM3: incoming cumulative m3/ha.
@@ -419,7 +419,7 @@ Init <- function(sim) {
 
   # Growth and yield
   if (!suppliedElsewhere("curveID", sim)) {
-    sim$curveID <- "gcID"
+    sim$curveID <- "curveID"
   }
 
   if (!suppliedElsewhere("userGcMeta", sim)) {
@@ -433,8 +433,8 @@ Init <- function(sim) {
                                  fun = fread,
                                  purge = 7
     )
-    data.table::setnames(sim$userGcMeta, "gcids", "gcID")
-    data.table::setkey(sim$userGcMeta, gcID)
+    data.table::setnames(sim$userGcMeta, "gcids", "curveID")
+    data.table::setkey(sim$userGcMeta, curveID)
 
     sim$userGcMeta$sw_hw <- sapply(sim$userGcMeta$forest_type_id == 1, ifelse, "sw", "hw")
   }
@@ -456,8 +456,8 @@ Init <- function(sim) {
                                  destinationPath = inputPath(sim),
                                  targetFile = "userGcM3.csv",
                                  fun = "data.table::fread")
-      data.table::setnames(sim$userGcM3, names(sim$userGcM3), c("gcID", "Age", "MerchVolume"))
-      data.table::setkeyv(sim$userGcM3, c("gcID", "Age"))
+      data.table::setnames(sim$userGcM3, names(sim$userGcM3), c("curveID", "Age", "MerchVolume"))
+      data.table::setkeyv(sim$userGcM3, c("curveID", "Age"))
 
     }
   }
