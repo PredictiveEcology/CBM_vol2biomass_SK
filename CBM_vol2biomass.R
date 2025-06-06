@@ -179,10 +179,10 @@ Init <- function(sim) {
   sim$userGcMeta <- data.table::as.data.table(sim$userGcMeta)
   sim$userGcM3   <- data.table::as.data.table(sim$userGcM3)
 
-  ## SK: always include gc ID 13
+  ## SK: always include gc ID 55
   sim$userGcSPU <- unique(data.table::rbindlist(list(
     sim$userGcSPU,
-    data.frame(spatial_unit_id = c(27, 28), gcID = 13)
+    data.frame(spatial_unit_id = 28, gcID = 55)
   ), fill = TRUE))
 
   ## user provides userGcM3: incoming cumulative m3/ha.
@@ -322,13 +322,13 @@ Init <- function(sim) {
   ## fol and other columns in gcids 37 and 58, will be replace by the fol and
   ## other of gcids 55.
   ## The user will have to decide which curves to replace and with what in their own study areas.
-  if (any(cPoolsRaw$gcids == "27_16")) {
-    cPoolsRaw[gcids == "27_16", fol   := cPoolsRaw[gcids == "27_13", fol]]
-    cPoolsRaw[gcids == "27_16", other := cPoolsRaw[gcids == "27_13", other]]
+  if (any(cPoolsRaw$gcids == "27_37")) {
+    cPoolsRaw[gcids == "27_37", fol   := cPoolsRaw[gcids == "28_55", fol]]
+    cPoolsRaw[gcids == "27_37", other := cPoolsRaw[gcids == "28_55", other]]
   }
-  if (any(cPoolsRaw$gcids == "28_16")) {
-    cPoolsRaw[gcids == "28_16", fol   := cPoolsRaw[gcids == "28_13", fol]]
-    cPoolsRaw[gcids == "28_16", other := cPoolsRaw[gcids == "28_13", other]]
+  if (any(cPoolsRaw$gcids == "28_58")) {
+    cPoolsRaw[gcids == "28_58", fol   := cPoolsRaw[gcids == "28_55", fol]]
+    cPoolsRaw[gcids == "28_58", other := cPoolsRaw[gcids == "28_55", other]]
   }
 
   # Smooth curves
