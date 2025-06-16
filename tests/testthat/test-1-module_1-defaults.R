@@ -13,7 +13,7 @@ test_that("Module runs with defaults", {
   # Set up project
   simInitInput <- SpaDES.project::setupProject(
 
-    modules = "CBM_vol2biomass",
+    modules = "CBM_vol2biomass_SK",
     paths   = list(
       projectPath = projectPath,
       modulePath  = spadesTestPaths$modulePath,
