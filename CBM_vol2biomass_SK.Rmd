@@ -48,7 +48,7 @@ and the objects `spatialDT` provides location information. The table below lists
 | table5       | Data table | Boudewyn table used in volume-to-biomass translations | [National Forest Inventory](https://nfi.nfis.org/resources/biomass_models/appendix2_table5.csv)        |
 | table6       | Data table | Boudewyn table used in volume-to-biomass translations | [National Forest Inventory](https://nfi.nfis.org/resources/biomass_models/appendix2_table6.csv)        |
 | table7       | Data table | Boudewyn table used in volume-to-biomass translations | [National Forest Inventory](https://nfi.nfis.org/resources/biomass_models/appendix2_table7.csv)        |
-| cbmAdmin      | Data table | Provides ecozone and spatial unit information for provincial boundaries | [Google Drive](https://drive.google.com/file/d/1xdQt9JB5KRIw72uaN5m3iOk8e34t9dyz)         |
+| cbmAdmin      | Data table | Provides ecozone and spatial unit information for provincial boundaries | CBM_defaults  |
 
 ## Module functioning
 
