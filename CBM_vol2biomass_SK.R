@@ -323,12 +323,28 @@ Init <- function(sim) {
   ## other of gcids 55.
   ## The user will have to decide which curves to replace and with what in their own study areas.
   if (any(cPoolsRaw$gcids == "27_37")) {
-    cPoolsRaw[gcids == "27_37", fol   := cPoolsRaw[gcids == "28_55", fol]]
-    cPoolsRaw[gcids == "27_37", other := cPoolsRaw[gcids == "28_55", other]]
+    cPoolsRaw[gcids == "27_37", fol   := cPoolsRaw[gcids == "27_55", fol]]
+    cPoolsRaw[gcids == "27_37", other := cPoolsRaw[gcids == "27_55", other]]
   }
   if (any(cPoolsRaw$gcids == "28_58")) {
     cPoolsRaw[gcids == "28_58", fol   := cPoolsRaw[gcids == "28_55", fol]]
     cPoolsRaw[gcids == "28_58", other := cPoolsRaw[gcids == "28_55", other]]
+  }
+  if (any(cPoolsRaw$gcids == "27_58")) {
+    cPoolsRaw[gcids == "27_58", fol   := cPoolsRaw[gcids == "27_55", fol]]
+    cPoolsRaw[gcids == "27_58", other := cPoolsRaw[gcids == "27_55", other]]
+  }
+  if (any(cPoolsRaw$gcids == "27_38")) {
+    cPoolsRaw[gcids == "27_38", fol   := cPoolsRaw[gcids == "27_55", fol]]
+    cPoolsRaw[gcids == "27_38", other := cPoolsRaw[gcids == "27_55", other]]
+  }
+  if (any(cPoolsRaw$gcids == "27_39")) {
+    cPoolsRaw[gcids == "27_39", fol   := cPoolsRaw[gcids == "27_55", fol]]
+    cPoolsRaw[gcids == "27_39", other := cPoolsRaw[gcids == "27_55", other]]
+  }
+  if (any(cPoolsRaw$gcids == "28_60")) {
+    cPoolsRaw[gcids == "28_60", fol   := cPoolsRaw[gcids == "28_55", fol]]
+    cPoolsRaw[gcids == "28_60", other := cPoolsRaw[gcids == "28_55", other]]
   }
 
   # Smooth curves
