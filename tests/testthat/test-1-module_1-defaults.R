@@ -5,27 +5,24 @@ test_that("Module runs with defaults", {
 
   ## Run simInit and spades ----
 
-  # Set project path
-  projectPath <- file.path(spadesTestPaths$temp$projects, "1-defaults")
-  dir.create(projectPath)
-  withr::local_dir(projectPath)
-
   # Set up project
+  projectName <- "1-defaults"
+
   simInitInput <- SpaDES.project::setupProject(
 
     modules = "CBM_vol2biomass_SK",
     paths   = list(
-      projectPath = projectPath,
+      projectPath = spadesTestPaths$projectPath,
       modulePath  = spadesTestPaths$modulePath,
       packagePath = spadesTestPaths$packagePath,
       inputPath   = spadesTestPaths$inputPath,
       cachePath   = spadesTestPaths$cachePath,
-      outputPath  = file.path(projectPath, "outputs")
+      outputPath  = file.path(spadesTestPaths$temp$outputs, projectName)
     ),
 
     userGcSPU = data.frame(
       spatial_unit_id = 28,
-      curveID         = 1
+      curveID         = 22
     )
   )
 
@@ -51,7 +48,7 @@ test_that("Module runs with defaults", {
   expect_true(!is.null(simTest$cPoolsClean))
   expect_true(inherits(simTest$cPoolsClean, "data.table"))
 
-  expect_true("28_1" %in% simTest$cPoolsClean$gcids)
+  expect_true("28_22" %in% simTest$cPoolsClean$gcids)
 
 
   ## Check output 'gcMeta' ---
@@ -59,7 +56,7 @@ test_that("Module runs with defaults", {
   expect_true(!is.null(simTest$gcMeta))
   expect_true(inherits(simTest$gcMeta, "data.table"))
 
-  expect_true("28_1" %in% simTest$gcMeta$gcids)
+  expect_true("28_22" %in% simTest$gcMeta$gcids)
 
 
   ## Check output 'growth_increments' ----
@@ -67,7 +64,7 @@ test_that("Module runs with defaults", {
   expect_true(!is.null(simTest$growth_increments))
   expect_true(inherits(simTest$growth_increments, "data.table"))
 
-  expect_true("28_1" %in% simTest$growth_increments$gcids)
+  expect_true("28_22" %in% simTest$growth_increments$gcids)
 
 })
 

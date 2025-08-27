@@ -62,14 +62,14 @@ defineModule(sim, list(
     expectsInput(
       objectName = "userGcMeta", objectClass = "data.frame",
       desc = "Growth curve metadata",
-      sourceURL = "https://drive.google.com/file/d/189SFlySTt0Zs6k57-PzQMuQ29LmycDmJ/view?usp=sharing"),
+      sourceURL = "https://drive.google.com/file/d/1ugECJVNkglSSQFVqnk5ayG6q38l6AWe9"),
     expectsInput(
       objectName = "userGcMetaURL", objectClass = "character",
       desc = "URL for userGcMeta"),
     expectsInput(
       objectName = "userGcM3", objectClass = "data.frame",
       desc = "Growth curve volumes with columns `Age` and `MerchVolume`.",
-      sourceURL = "https://drive.google.com/file/d/1u7o2BzPZ2Bo7hNcC8nEctNpDmp7ce84m"),
+      sourceURL = "https://drive.google.com/file/d/13s7fo5Ue5ji0aGYRQcJi-_wIb2-4bgVN"),
     expectsInput(
       objectName = "cbmAdmin", objectClass = "data.frame",
       desc = paste("Provides equivalent between provincial boundaries,",
@@ -452,7 +452,7 @@ Init <- function(sim) {
     data.table::setnames(sim$userGcMeta, "gcids", "curveID")
     data.table::setkey(sim$userGcMeta, curveID)
 
-    sim$userGcMeta$sw_hw <- sapply(sim$userGcMeta$forest_type_id == 1, ifelse, "sw", "hw")
+    sim$userGcMeta[, sw_hw := data.table::fifelse(forest_type_id == 1, "sw", "hw")]
   }
 
   if (!suppliedElsewhere("userGcM3", sim)){
