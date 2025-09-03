@@ -37,12 +37,7 @@ test_that("Multi module: SK-small 1998-2000", {
         res  = 30,
         vals = 0L,
         crs  = "EPSG:3979"
-      ),
-
-      outputs = as.data.frame(expand.grid(
-        objectName = c("cbmPools", "NPP"),
-        saveTime   = sort(c(times$start, times$start + c(1:(times$end - times$start))))
-      ))
+      )
     )
   )
 
