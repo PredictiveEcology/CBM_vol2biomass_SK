@@ -240,7 +240,7 @@ Init <- function(sim) {
   if (any(!c("canfi_species", "sw_hw", "genus") %in% names(sim$userGcMeta))){
 
     sppMatchTable <- CBMutils::sppMatch(
-      sim$gcMeta$species, return = c("CanfiCode", "NFI", "Broadleaf"))[, .(
+      sim$userGcMeta$species, return = c("CanfiCode", "NFI", "Broadleaf"))[, .(
         canfi_species = CanfiCode,
         sw_hw         = data.table::fifelse(Broadleaf, "hw", "sw"),
         genus         = sapply(strsplit(NFI, "_"), `[[`, 1)
