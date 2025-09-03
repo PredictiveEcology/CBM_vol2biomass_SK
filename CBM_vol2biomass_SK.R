@@ -55,20 +55,20 @@ defineModule(sim, list(
   inputObjects = bindrows(
     expectsInput(
       objectName = "curveID", objectClass = "character",
-      desc = "Column(s) uniquely defining each growth curve in `userGcSPU`, `userGcMeta`, and `userGcM3`."),
+      desc = "Column(s) uniquely defining each growth curve in `userGcSPU` and `userGcMeta`. Defaults to 'curveID'."),
     expectsInput(
       objectName = "userGcSPU", objectClass = "data.frame",
-      desc = "Growth curve locations with columns `curveID` and 'spatial_unit_id'"),
+      desc = "Growth curve locations with columns 'spatial_unit_id' and all columns named by `curveID`"),
     expectsInput(
       objectName = "userGcMeta", objectClass = "data.frame",
-      desc = "Growth curve metadata",
+      desc = "Growth curve metadata with columns 'curveID' and all columns named by `curveID`",
       sourceURL = "https://drive.google.com/file/d/1ugECJVNkglSSQFVqnk5ayG6q38l6AWe9"),
     expectsInput(
       objectName = "userGcMetaURL", objectClass = "character",
       desc = "URL for userGcMeta"),
     expectsInput(
       objectName = "userGcM3", objectClass = "data.frame",
-      desc = "Growth curve volumes with columns `Age` and `MerchVolume`.",
+      desc = "Growth curve volumes with columns 'curveID', `Age`, and `MerchVolume`.",
       sourceURL = "https://drive.google.com/file/d/13s7fo5Ue5ji0aGYRQcJi-_wIb2-4bgVN"),
     expectsInput(
       objectName = "cbmAdmin", objectClass = "data.frame",
@@ -146,10 +146,6 @@ doEvent.CBM_vol2biomass_SK <- function(sim, eventTime, eventType) {
 
 Init <- function(sim) {
 
-  # Temporary assertions for curveID
-  ## TODO: allow multiple columns as curveID
-  if (length(sim$curveID) != 1) stop("curveID must be a single column until further notice")
-
   # Check input
   if ("gcids" %in% sim$curveID)           stop("'curveID' cannot contain \"gcids\"")
   if ("gcids" %in% names(sim$userGcMeta)) stop("'userGcMeta' cannot contain \"gcids\"")
@@ -157,8 +153,8 @@ Init <- function(sim) {
 
   reqCols <- list(
     userGcSPU  = c(sim$curveID, "spatial_unit_id"),
-    userGcMeta = c(sim$curveID, "species"),
-    userGcM3   = c(sim$curveID, "Age", "MerchVolume")
+    userGcMeta = c("curveID", sim$curveID, "species"),
+    userGcM3   = c("curveID", "Age", "MerchVolume")
   )
 
   if (!all(reqCols$userGcSPU %in% names(sim$userGcSPU))) stop(
@@ -168,11 +164,13 @@ Init <- function(sim) {
   if (!all(reqCols$userGcM3 %in% names(sim$userGcM3))) stop(
     "userGcM3 must have columns: ", paste(shQuote(reqCols$userGcM3), collapse = ", "))
 
-  if (!all(sim$userGcSPU[[sim$curveID]] %in% sim$userGcMeta[[sim$curveID]])) {
-    stop("There is a missmatch in the growth curves of the userGcSPU and userGcM3")
+  if (!all(sim$userGcM3$curveID %in% sim$userGcMeta$curveID)) {
+    stop("There is a missmatch in the 'curveID' columns of userGcMeta and the userGcM3")
   }
-  if (!all(sim$userGcMeta[[sim$curveID]] %in% sim$userGcM3[[sim$curveID]])) {
-    stop("There is a missmatch in the growth curves of the userGcM3 and the userGcMeta")
+  for (col in sim$curveID){
+    if (!all(sim$userGcSPU[[col]] %in% sim$userGcMeta[[col]])) {
+      stop("There is a missmatch in the ", sQuote(col), " columns of userGcSPU and userGcMeta")
+    }
   }
 
   sim$userGcSPU  <- data.table::as.data.table(sim$userGcSPU)
@@ -180,34 +178,36 @@ Init <- function(sim) {
   sim$userGcM3   <- data.table::as.data.table(sim$userGcM3)
 
   ## SK: always include gc ID 55
-  sim$userGcSPU <- unique(data.table::rbindlist(list(
-    sim$userGcSPU,
-    data.frame(spatial_unit_id = 28, curveID = 55)
-  ), fill = TRUE))
+  if (any(c(27, 28) %in% sim$userGcSPU$spatial_unit_id) && 55 %in% sim$userGcMeta$curveID){
+    sim$userGcSPU <- unique(data.table::rbindlist(list(
+      sim$userGcSPU,
+      data.frame(spatial_unit_id = 28, curveID = 55)
+    ), fill = TRUE))
+  }
 
   ## user provides userGcM3: incoming cumulative m3/ha.
   ## table needs 3 columns: gcids, Age, MerchVolume
   # Here we check that ages increment by 1 each timestep,
   # if it does not, it will attempt to resample the table to make it so.
-  ageJumps <- sim$userGcM3[, list(jumps = unique(diff(as.numeric(Age)))), by = eval(sim$curveID)]
-  idsWithJumpGT1 <- ageJumps[jumps > 1][[sim$curveID]]
+  ageJumps <- sim$userGcM3[, list(jumps = unique(diff(as.numeric(Age)))), by = curveID]
+  idsWithJumpGT1 <- ageJumps[jumps > 1][["curveID"]]
   if (length(idsWithJumpGT1) > 0) {
     missingAboveMin <- sim$userGcM3[, approx(Age, MerchVolume, xout = setdiff(seq(0, max(Age)), Age)),
-                                    by = eval(sim$curveID)]
+                                    by = curveID]
     setnames(missingAboveMin, c("x", "y"), c("Age", "MerchVolume"))
     sim$userGcM3 <- rbindlist(list(sim$userGcM3, na.omit(missingAboveMin)))
-    setorderv(sim$userGcM3, c(sim$curveID, "Age"))
+    setorderv(sim$userGcM3, c("curveID", "Age"))
 
     # Assertion
-    ageJumps <- sim$userGcM3[, list(jumps = unique(diff(as.numeric(Age)))), by = eval(sim$curveID)]
-    idsWithJumpGT1 <- ageJumps[jumps > 1][[sim$curveID]]
+    ageJumps <- sim$userGcM3[, list(jumps = unique(diff(as.numeric(Age)))), by = curveID]
+    idsWithJumpGT1 <- ageJumps[jumps > 1][["curveID"]]
     if (length(idsWithJumpGT1) > 0)
       stop("There are still yield curves that are not annually resolved")
   }
 
   # Creates/sets the vol2biomass outputs subfolder (inside the general outputs folder)
   figPath <- file.path(outputPath(sim), "CBM_vol2biomass_figures")
-  sim$volCurves <- ggplot(data = sim$userGcM3, aes(x = Age, y = MerchVolume, group = sim$curveID, colour = factor(sim$curveID))) +
+  sim$volCurves <- ggplot(data = sim$userGcM3, aes(x = Age, y = MerchVolume, group = "curveID", colour = factor("curveID"))) +
     geom_line() + theme_bw()
   SpaDES.core::Plots(sim$volCurves,
                      filename = "volCurves",
@@ -277,7 +277,7 @@ Init <- function(sim) {
       by = "spatial_unit_id")
   }
 
-  gcM3 <- merge(sim$userGcSPU, sim$userGcM3, by = sim$curveID, allow.cartesian = TRUE)[
+  gcM3 <- merge(sim$gcMeta, sim$userGcM3, by = "curveID", allow.cartesian = TRUE)[
     , .(gcids, Age, MerchVolume)]
   data.table::setkey(gcM3, gcids, Age)
 
