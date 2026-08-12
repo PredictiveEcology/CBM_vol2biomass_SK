@@ -15,7 +15,7 @@ editor_options:
 # CBM_vol2biomass
 
 :::{.rmdimportant}
-This documentation is work in progress. Potential discrepancies and omissions may exist for the time being. If you find any, please contact us [here]("https://github.com/PredictiveEcology/CBM_vol2biomass/issues").
+This documentation is work in progress. Potential discrepancies and omissions may exist for the time being. If you find any, please contact us [here](https://github.com/PredictiveEcology/CBM_vol2biomass/issues).
 :::
 
 ## Overview
